@@ -5,4 +5,4 @@ dots_bash_emacs_mode: false
 dots_remote_gitconfig: true
 dots_setup_fortunes: false
 dots_setup_neovim: false
-dots_dotfiles_list: {}
+dots_dotfiles_list: []

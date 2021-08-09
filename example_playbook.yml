@@ -13,8 +13,6 @@
     tags: role_base
     vars:
       base_allow_reboot: false
-      base_limit_ssh: false
-      base_audit: false
       base_disable_bluetooth: false
       base_disable_bt_autosuspend: false
       base_disable_firewire: true
@@ -22,8 +20,10 @@
       base_disable_nonsof: true
       base_disable_speaker: false
       base_disable_thunderbolt: false
+      base_enable_audit: false
       base_fb_font_size: 10x18
       base_fstab_noexec: true
+      base_hda_options: []
       base_fw_list:
         - { src: 'https://raw.githubusercontent.com/Realtek-OpenSource/android_hardware_realtek/rtk1395/bt/rtkbt/Firmware/BT/rtl8761b_config',
             dest: 'rtl_bt/rtl8761b_config.bin',
@@ -36,6 +36,7 @@
       base_grub_timeout: 3
       base_hide_pid: false
       base_init_on_free: false
+      base_limit_ssh: false
       base_locale: en_AU.UTF-8
       base_locale_singular: true
       base_logind_configure: false
