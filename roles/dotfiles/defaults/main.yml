@@ -1,0 +1,11 @@
+---
+dotfiles_backup: '{{ dots_dotfiles_list }}'
+gpg_files_found: []
+tmux_remove_lines:
+  - "unbind C-b"
+  - "set -g prefix C-Space"
+  - "bind C-Space send-prefix"
+  - "bind -n C-left prev"
+  - "bind -n C-right next"
+  - "bind > swap-pane -D"
+  - "bind < swap-pane -U"

@@ -1,0 +1,25 @@
+---
+- name: Check pubring and trust-db in ~/.gnupg/
+  stat:
+    path: '{{ ansible_env.HOME }}/.gnupg/{{ item }}'
+  with_items:
+    - "pubring.kbx"
+    - "trustdb.gpg"
+  register: gpg_stat
+
+- name: Set intermediate fact about our findings...
+  no_log: true
+  set_fact:
+    gpg_files_found: '{{ gpg_files_found + [item.stat.exists] }}'
+  with_items:
+    - '{{ gpg_stat.results }}'
+
+- name: Create single 'GPG-result' variable...
+  set_fact:
+    gpg_db_initialised: '{{ gpg_files_found | unique | join() | bool }}'
+
+- name: Initialise ~/.gnupg
+  shell:
+    cmd: gpg -k
+    chdir: '{{ ansible_env.HOME }}'
+  when: not gpg_db_initialised

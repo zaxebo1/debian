@@ -1,0 +1,23 @@
+---
+sw_alsa_out_card: 0
+sw_alsa_out_device: 0
+sw_setup_audio: true
+sw_setup_clevis: false
+sw_setup_deb: []
+sw_setup_dev: true
+sw_setup_fonts: true
+sw_setup_fs: true
+sw_setup_i2c: false
+sw_setup_internet: true
+sw_setup_multimedia: true
+sw_setup_office: true
+sw_setup_utils: true
+sw_setup_wayland: true
+sw_setup_wireless: false
+sw_systemd_units_disable: []
+sw_systemd_units_enable: []
+sw_systemd_units_masked: []
+sw_virtio_install: true
+sw_virtio_network_autostart: true
+sw_virtio_use_default_network: true
+sw_virtio_user_addgroup: true

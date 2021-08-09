@@ -1,0 +1,50 @@
+---
+- name: Register Secure Boot status
+  shell:
+    cmd: 'mokutil --sb-state | grep "^SecureBoot enabled$"'
+  register: sb_status
+  changed_when: false
+  failed_when: false
+  when: base_bootmode.stdout | bool
+
+- name: Enable module signing verification
+  set_fact:
+    sig_enforce: 'module.sig_enforce=1'
+  when:
+    - base_bootmode.stdout | bool
+    - base_set_sigenforce
+    - sb_status.rc == 0
+
+  # Refs:
+  #   - https://github.com/Whonix/security-misc/blob/master/etc/default/grub.d/40_kernel_hardening.cfg
+  #   - https://tails.boum.org/contribute/design/kernel_hardening/
+  #   - https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project/Recommended_Settings
+  #   - https://github.com/torvalds/linux/commit/6471384af
+- name: Configure GRUB_CMDLINE
+  lineinfile:
+    path: /etc/default/grub
+    # Bullseye, v5.10+
+    # TODO:
+    #   - Consider `lockdown=confidentiality`
+    #   - Consider `slub_debug=ZF`
+    #   - Consider init_on_free=1
+    #   - Do *NOT* add page_poison=1 and slub_debug=P on newer kernels
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="quiet loglevel=1 kaslr apparmor=1 security=apparmor ipv6.disable=1 kernel.kptr_restrict=2 slab_nomerge mce=0 page_alloc.shuffle=1 mitigations=auto audit={{ base_enable_audit | int }} init_on_alloc=1 base_init_on_free={{ base_init_on_free | int }} pti=auto vsyscall=none extra_latent_entropy{{ cpu_iommu }} fsck.mode=force fsck.repair=preen {{ base_grub_optional }} {{ sig_enforce }} kernel.kexec_load_disabled=1"'
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT'
+  notify: grub_update
+
+- name: Set Grub timeout
+  lineinfile:
+    path: /etc/default/grub
+    line: 'GRUB_TIMEOUT={{ base_grub_timeout }}'
+    regexp: '^GRUB_TIMEOUT'
+  notify: grub_update
+
+- name: Tighten Grub config permissions (V-38583)
+  file:
+    path: '{{ item }}'
+    mode: 0600
+  with_items:
+    - "/boot/grub/grub.cfg"
+    - "/boot/grub/grubenv"
+    - "/boot/grub/unicode.pf2"

@@ -1,0 +1,549 @@
+" ------------------- Self-explanatory -------------------
+
+colorscheme ansa
+execute 'colorscheme fuse' &fusehome
+set confirm=permdelete
+set dotfiles
+set fusehome="$HOME/.cache/fuse"
+set history=256
+set hlsearch
+set ignorecase
+set incsearch
+set nowrap
+set smartcase
+set statusline="%11A  %6u:%-6g %= %5E %19d "
+set title
+set trash
+set trashdir="$HOME/.cache/trash"
+set undolevels=256
+set vicmd=nvim
+set wildmenu
+set wildstyle=popup
+let $inside_vifm=1
+
+" ---------------------- Settings ----------------------
+
+" p:
+"   1. file list inside a pane gets additional single character padding
+"      on left and right sides;
+"   2. quick view and view mode get single character padding.
+" u - use Unicode characters in the TUI (Unicode ellipsis instead of '...')
+set tuioptions=pu
+
+" What to save on exit. `bmarks` are the named bookmarks only.
+set vifminfo=bmarks,chistory,dhistory,fhistory,phistory,shistory,tabs
+
+" Columns, truncate with ellipses
+set viewcolumns=-{name}..
+
+" p - always ignore case of paths during completion
+set caseoptions=p
+
+" Process ops by vifm instead of piping back to `cp`, etc.
+set syscalls
+
+" Don't jump to link, treat as file
+set nofollowlinks
+
+" Run partially entered commands with unambiguous beginning using :!
+set fastrun
+
+" Natural sort of (version) numbers within text.
+set sortnumbers
+
+" Sort folders first, then by name ignoring case. Both ascending.
+set sort=+dir,+iname
+
+" Use Vim's format of help file (has highlighting and "hyperlinks").
+set vimhelp
+
+" Don't execute binaries by clicking on them or by <Cr>
+set norunexec
+
+" man strftime
+set timefmt=%d\ %b\ %y\ %H:%M
+
+" Display all possible suggestions
+set suggestoptions=normal,visual,view,otherpane,keys,marks,registers
+
+" Compatibility options
+"   f - filters are NOT inverted by default (why would they?!)
+"   s - yy/dd/DD act on selection instead of the current file only
+set cpoptions=fs
+
+" Same as in vim
+set fillchars='vborder:┃'
+
+" Ruler (text next to the commandline)
+set rulerformat='%[%x excluded%]'
+
+" Don't wait too long before showing preview TODO: Doesn't work?
+" set previewoptions="graphicsdelay:500"
+
+" Use ripgrep instead of grep
+set grepprg='rg -Hn %i %a %s'
+
+" Use fd instead of find
+set findprg='fd %p %s'
+
+" Single pane when started via vim plugin
+if $MYVIMRC != '' | only | endif
+
+" Miller panel ratios
+set milleroptions=lsize:1,csize:2,rsize:3
+
+" Parent icon
+set classify+=' ::../::'
+
+" ---------------------- Bookmarks ----------------------
+
+" Marks
+mark 3 ~/_gc/t3
+mark b ~/.local/bin/
+mark c ~/code
+mark d ~/Downloads
+mark h ~
+mark m ~/Music
+mark p /tmp
+mark s ~/Desktop/screenshots
+mark t ~/Desktop
+
+" ----------------- Commands / Hotkeys ------------------
+
+" %a is replaced with the user arguments.
+" %c the current file under the cursor.
+" %C the current file under the cursor in the other directory.
+" %f the current selected file, or files.
+" %F the current selected file, or files in the other directory.
+" %b same as %f %F.
+" %d the current directory name.
+" %D the other window directory name.
+" %i completely ignore command output
+" %s execute command in split window of active terminal multiplexer
+" %S show command output in status bar
+" %p arguments of :find
+" !! pause command before returning
+
+map <space> <nop>
+map <tab> <nop>
+nmap <tab> <c-w>w
+
+" TODO: Disable in ls-view or learn to be careful with <l>
+" nnoremap l :if filetype('.') == 'dir'
+        " \ | cd %c
+        " \ | endif<cr>
+
+" Clear local filter with <esc>
+nnoremap <esc> zr<esc>
+
+" Living in the fast lane
+nnoremap ; :
+
+" Histories
+nnoremap <space>; :history cmd<cr>
+nnoremap <space>i :history dir<cr>
+nnoremap <space>/ :history search<cr>
+nnoremap <space>= :history filter<cr>
+nnoremap <space>? :history input<cr>
+
+" Go ..
+nnoremap .. gh
+
+" dotfiles
+nnoremap <c-h> za
+
+" Information about selected object
+nnoremap I <c-g>
+
+" Tabsread -n 1 -s -p "$quote"
+nmap <space>, :tabprev<cr>
+nmap <space>. :tabnext<cr>
+nmap <space>n :tabnew<cr>
+nmap <space>q :tabclose<cr>
+
+" Save session on exit
+nmap qq :wq<cr>
+
+" Pull the plug
+nnoremap QQ :q!<cr>
+
+" Symlinking
+command link ln -s %d/%f %D
+nnoremap gl :link<cr>
+
+" Copy/move with confirmation dialog
+:command! cp :yank | winrun , put
+:command! mv :yank | winrun , put!
+
+" Display sorting dialog
+nnoremap s :sort<cr>
+
+" Shell-direct
+nnoremap <silent> S :shell<cr>
+
+" Horizontal split as in vim
+command! sv :split
+nnoremap <c-w>h :split<cr>
+
+" Window resize
+nnoremap _ <c-w>-
+nnoremap + <c-w>+
+
+" Column views
+command! simple :windo set viewcolumns=-{name}..
+command! detailed :windo set viewcolumns=-{fileroot}..,9.9{fileext}..,7.5{size}...,17.15{mtime}..
+nnoremap <c-w>s :set nomillerview | :set nolsview | :simple<cr>
+nnoremap <c-w>d :set nomillerview | :set nolsview | :detailed<cr>
+
+" Miller-view
+nnoremap <c-w>m :set millerview!<cr>
+
+" Tree-view
+nnoremap <c-w>t :tree!<cr>
+
+" Ls-like view
+nnoremap <c-w>l :set lsview!<cr>
+
+" Open file menu
+nmap o :file<cr>
+
+" Preview on 'w'
+nnoremap w :view<cr>
+vnoremap <silent> w :view<cr>gv
+
+" Toggle wrap setting
+nnoremap W :set wrap!<cr>
+
+" Usual trick...
+command mcd :mkdir %a | cd %a
+
+" Open selected directory in another pane (go Open)
+nnoremap go :sync %c<cr><Tab>
+
+" Sync both panes (go synC)
+nnoremap gc :sync<cr>
+
+" Reload vifmrc
+command reload :write | restart
+nmap <a-r> :reload<cr>
+
+" Edit *and* reload vifmrc
+nnoremap <a-e> :write | execute ':!%n${EDITOR:-vim} $MYVIFMRC' | restart<cr>
+
+" Open editor to edit vifmrc and apply settings after returning to vifm
+command cfg :write | edit $MYVIFMRC | restart
+
+" Drag-On-drop
+command! drop dragon --all --and-exit --on-top %f %i &
+nmap <c-d> :drop<cr>
+
+" Show in (%m)enu
+command man man %a %m
+command t task %a 2> /dev/null %m
+command cal cal.sh clear
+command df df -h %a %m
+command rsync rsync --archive --compress --info=progress2 --human-readable --update --delete %f %D %s %m
+command shasum sha1sum %f %m
+
+" Git
+command git git status --porcelain %d | cut -c4- | sed -r "s#^.*$(basename $(pwd))/?##" %U
+command log git lf -- %c 2>&1 %m
+
+" Back/forward
+nmap <c-p> :histnext<cr>
+nmap <c-o> :histprev<cr>
+
+" Selections
+nmap J :select<cr>j
+nmap K :select<cr>k
+nmap <c-a> :%select<cr>
+nmap * :select! *<cr>
+
+" Yank things: dir, file, content, www-link
+nnoremap yd :!echo -n %d | wl-copy --trim-newline %i<cr>:echo expand('%"d') "is copied to clipboard"<cr>
+nnoremap yf :!echo %c:p | wl-copy --trim-newline %i<cr>:echo expand('%"c:p') "is copied to clipboard"<cr>
+nnoremap yn :!echo %c | wl-copy --trim-newline %i<cr>:echo expand('%"c') "is copied to clipboard"<cr>
+nnoremap yc :!cat %f | wl-copy<cr>:echo expand('%f') "content is copied to clipboard"<cr>
+nnoremap yw :!echo file://%c:p | wl-copy --trim-newline %i<cr>
+
+" F-keys
+nnoremap <f2> cw
+nnoremap <f3> :!bat --pager "less -R --clear-screen --ignore-case --mouse --quiet" %f<cr>
+nnoremap <f4> :edit<cr>
+nnoremap <f5> :cp<cr>
+nnoremap <f6> :mv<cr>
+nnoremap <f7> :mkdir<space>
+nnoremap <s-f7> :touch<space>
+nnoremap <f8> :delete<cr>
+nnoremap <f9> :!foot bash -c "cd %d; exec bash" %i &<cr>
+nnoremap <f10> :media<cr>
+
+" fzf search
+command! fzf : set noquickview
+                \| let $FZF_PICK = term('fd --hidden --no-ignore --exclude .git | fzf --exact 2> /dev/tty')
+                \| if $FZF_PICK != ''
+                \|     execute 'goto' fnameescape($FZF_PICK)
+                \| endif
+nnoremap <C-f> :fzf<cr>
+
+" List all maps in normal mode
+nnoremap <silent> ,nm :nmap<cr>
+
+" List all maps in command line mode
+nnoremap <silent> ,cm :cmap<cr>
+
+" List all maps in menu mode
+nnoremap <silent> ,mm :mmap<cr>
+
+" List all maps in view mode
+nnoremap <silent> ,vw :qmap<cr>
+
+" List all maps in visual mode
+nnoremap <silent> ,vm :vmap<cr>
+
+" List all user commands
+nnoremap <silent> ,uc :command<cr>
+
+" Move cursor in another pane
+nnoremap <silent> <c-j> <c-w>wj<c-w>w
+nnoremap <silent> <c-k> <c-w>wk<c-w>w
+
+" " Single-pane preview
+" " https://q2a.vifm.info/803/file-preview-when-in-the-single-pane-mode?show=808#c808
+nnoremap <silent> w : if &quickview && !layoutis('only')
+                   \|     view
+                   \| else
+                   \|     if layoutis('only')
+                   \|         if &lines + 50 < &columns | vsplit | else | split | endif
+                   \|         execute 'qnoremap w q:view|only|qunmap w<lt>cr>'
+                   \|     else
+                   \|         execute 'qnoremap w q:view|qunmap w<lt>cr>'
+                   \|     endif
+                   \|     view!
+                   \|     execute 'wincmd w'
+                   \| endif
+                   \| <cr>
+
+" TODO: Global filter. Somehow doesn't work as expected.
+"
+" " filter directories which names end with '.files'
+" :filter /^.*\.files\/$/
+"
+" " filter files which names end with '.d'
+" :filter {*.d}
+"
+" " filter files and directories which names end with '.o'
+" :filter /^.*\.o\/?$/
+"
+" filter /\.o$/
+" nnoremap gf :filter!<cr>
+
+" Diff folders
+nnoremap dfd !!clear -x && diff -r --color=always %d %D | less -R 2> /dev/null<cr>
+nnoremap dfo !!clear -x && diff -qr --color=always %d %D | grep -i only | less -R 2> /dev/null<cr>
+
+
+" Diff files
+" uses selection of current pane when it contains more than one file
+" otherwise uses left pane file and right pane file keeping order inside Vim
+command! diff : if expand('%%c') == expand('%%f')
+            \ |     if paneisat('right') && paneisat('bottom')
+            \ |         execute '!vim -d %%C %%c'
+            \ |     else
+            \ |         execute '!vim -d %%c %%C'
+            \ |     endif
+            \ | else
+            \ |     execute '!vim -d %%f'
+            \ | endif
+nnoremap dff :diff<cr>
+
+" ------------------------ Filetypes ---------------------------------
+
+" filetype --> what to use on <cr> / :open
+" fileviewer --> what to use for :view / <w>
+" filetype patternA,patternB defaultApp,alternativeApp
+
+" Document
+filetype *.pdf,*.ps,*.eps,*.ps.gz,*.djvu
+        \ {Open in Zathura}
+        \ zathura %f %i &,
+fileviewer *.pdf pdftotext -q -nopgbrk %c -
+
+" ePub
+filetype *.epub
+        \ {Open in Calibre}
+        \ ebook-viewer %c,
+fileviewer *.epub pandoc -f epub -t plain %c
+
+" Image
+filetype *.apng,*.bmp,*.gif,*.ico,*.icon,*.j2k,*.jp2,*.jpeg,*.jpf,*.jpg,*.jpm,*.jpx,*.mng,*.pbm,*.pcx,*.pgm,*.png,*.ppm,*.psd,*.tga,*.tif,*.tiff,*.webp,*.xbm,*.xpm,*.svg,*.svgz
+        \ {Open in imv}
+        \ imv-wayland %f &,
+        \ {Open in nomacs}
+        \ nomacs %c,
+fileviewer *.apng,*.bmp,*.gif,*.ico,*.icon,*.j2k,*.jp2,*.jpeg,*.jpf,*.jpg,*.jpm,*.jpx,*.mng,*.pbm,*.pcx,*.pgm,*.png,*.ppm,*.psd,*.tga,*.tif,*.tiff,*.webp,*.xbm,*.xpm
+        " path  previewWidth  previewHeight  useDirectCommunicationWithTerminal
+        \ /home/lbr/.config/vifm/scripts/show-sixel %c %pw %ph %pd
+
+" Audio
+filetype *.ac3,*.ape,*.au,*.axa,*.flac,*.m4a,*.mid,*.midi,*.mka,*.mp3,*.mpc,*.og[agx],*.oga,*.ogg,*.opus,*.ra,*.spx,*.wav,*.wma,*.xspf
+        \ {Open in cmus}
+        \ cmus-remote -f %f,
+        \ ffprobe -hide_banner -pretty -byte_binary_prefix -loglevel 24 -of ini -show_format %c | column -s "=" -t | sed -r 's/\\:/:/g; s/^\[(.*)\]/--- \1 ---/',
+fileviewer *.ac3,*.ape,*.au,*.axa,*.flac,*.m4a,*.mid,*.midi,*.mka,*.mp3,*.mpc,*.og[agx],*.oga,*.ogg,*.opus,*.ra,*.spx,*.wav,*.wma,*.xspf
+        \ mediainfo %c | tr -s " " | grep -v -E "General|Audio" | column -s ":" -o "│" -t
+
+" Video
+filetype *.avi,*.mp4,*.wmv,*.dat,*.3gp,*.ogv,*.mkv,*.mpg,*.mpeg,*.vob,*.fl[icv],*.m2v,*.mov,*.webm,*.ts,*.mts,*.m4v,*.r[am],*.qt,*.divx,*.as[fx]
+        \ {Open in mpv}
+        \ mpv %f,
+        \ {Probe with ffprobe}
+        \ ffprobe -hide_banner -pretty -byte_binary_prefix -loglevel 24 -of ini -show_format %c | column -s "=" -t | sed -r 's/\\:/:/g; s/^\[(.*)\]/--- \1 ---/',
+fileviewer *.avi,*.mp4,*.wmv,*.dat,*.3gp,*.ogv,*.mkv,*.mpg,*.mpeg,*.vob,*.fl[icv],*.m2v,*.mov,*.webm,*.ts,*.mts,*.m4v,*.r[am],*.qt,*.divx,*.as[fx]
+        \ mediainfo %c | tr -s " " | sed -r 's/\ :\ /\ ^\ /' | column -s "^" -o "│" -t | sed -r '/^Audio|^Video/ s/$/ ────────────/; s/(^Audio|^Video)(\s+)(\s{12})( │)/\1\2───────────\4/'
+        "
+        " gsub() below fails in vifm, but works in bash. Go figure.
+        " UPDATE, from `man vifm`: "If  you  need  to insert comma into command just double it (',,')"
+        "
+        " \ mediainfo %c | tr -s " " | awk -F " : " -v OFS=" : " '{ gsub(/:/,"-",$2) } { print }' | column -s ":" -o "│" -t | sed -r '/^Audio|^Video/ s/$/ ────────────/; s/(^Audio|^Video)(\s+)(\s{12})( │)/\1\2───────────\4/'
+
+" Webpage
+filetype *.html,*.htm
+        \ {Open in w3m}
+        \ w3m %c,
+        \ {Open in Firefox}
+        \ firefox %f &,
+        \ {Open in Qutebrowser}
+        \ qutebrowser -- %f %i &,
+fileviewer *.html,*.htm w3m %c
+
+" Generic archive
+filetype .*.tar,*.tar,*.tar.bz2,*.tbz2,*.tgz,.*.tar.gz,*.tar.gz,.*.tar.xz,*.tar.xz,*.ova,*.rar
+        \ {Mount with fuse-archivemount}
+        \ FUSE_MOUNT|archivemount %SOURCE_FILE %DESTINATION_DIR,
+        \ {Mount with fuse-avfs}
+        \ FUSE_MOUNT3|mount-avfs %DESTINATION_DIR %SOURCE_FILE,
+        \ {List}
+        \ als %c %m,
+        \ {Extract}
+        \ aunpack --each %f,
+        \ {Extract in subfolder}
+        \ mkdir %c:r && aunpack --extract-to=%c:r %c && read -n 1 -s -p "(OK)",
+
+" Zip
+filetype *.zip,*.jar,*.war,*.ear,*.oxt,*.apkg,*.apk,*.cbz
+        \ {Mount with fuse-zip}
+        \ FUSE_MOUNT|fuse-zip %SOURCE_FILE %DESTINATION_DIR,
+        \ {List human-readable}
+        \ als %c %m | numfmt --field=1 --to=iec-i --suffix=B --header=3 --invalid=ignore,
+        \ {Extract}
+        \ aunpack --each %f,
+        \ {Extract in subfolder}
+        \ mkdir %c:r && aunpack --extract-to=%c:r %c && read -n 1 -s -p "(OK)",
+fileviewer *.zip,*.jar,*.war,*.ear,*.oxt,*.apkg,*.apk,*.cbz zip -sf %c
+
+" Rar
+fileviewer *.rar unrar v -v %c | tail -n +3
+
+" OVA
+fileviewer *.ova
+        \ tar -x -O --wildcards -f %c *.ovf | xmllint --xpath 'string(*)' - | column
+
+" ISO
+filetype *.iso
+        \ {Mount with fuse-iso}
+        \ FUSE_MOUNT|fuseiso %SOURCE_FILE %DESTINATION_DIR,
+
+" Torrent
+filetype *.torrent
+        \ {Show details}
+        \ transmission-show %c %m,
+        \ {Add to Transmission}
+        \ transmission-gtk %c %i &,
+fileviewer *.torrent transmission-show %c
+
+" SqLite
+filetype *.db,*.sqlite
+        \ {Dump tables}
+        \ echo -e '.tables\n.exit' | sqlite3 %c %m,
+        \ {Open in sqlite3}
+        \ sqlite3 %c,
+fileviewer *.db,*.sqlite sqlite3 %c
+
+" iPython notebook
+fileviewer *.ipynb pandoc -f ipynb -t gfm %c | bat -l markdown
+
+" Markdown
+filetype *.md,*.markdown,*.mdown
+        \ {View in clima}
+        \ clima %c,
+fileviewer *.md,*.markdown,*.mdown clima -p %c
+
+" Office files
+filetype *.odt,*.ods,*.doc,*.docx,*.xls,*.xlsx,*.odp,*.pptx
+        \ {Open in LibreOffice}
+        \ libreoffice %f &,
+fileviewer *.doc catdoc %c
+fileviewer *.docx docx2txt %f -
+fileviewer *.odt,*.ods odt2txt %c
+
+" Object
+filetype *.o nm %f | less
+
+" Man page
+filetype *.[1-8] man ./%c
+fileviewer *.[1-8] man ./%c | col -b
+
+" MD5
+filetype *.md5
+        \ {Check MD5 hash sum}
+        \ md5sum -c %f %S,
+
+" SHA1
+filetype *.sha1
+        \ {Check SHA1 hash sum}
+        \ sha1sum -c %f %S,
+
+" SHA256
+filetype *.sha256
+        \ {Check SHA256 hash sum}
+        \ sha256sum -c %f %S,
+
+" SHA512
+filetype *.sha512
+        \ {Check SHA512 hash sum}
+        \ sha512sum -c %f %S,
+
+" GPG
+filetype *.asc,*.gpg,*.sig
+        \ {Check signature}
+        \ !!gpg --verify %c,
+        \ {Decrypt}
+        \ !!gpg --decrypt %c,
+
+
+" SshMount
+filetype *.sshfs,*.ssh
+        \ {Mounts with fuse-sshfs}
+        \ FUSE_MOUNT2|sshfs %PARAM %DESTINATION_DIR %FOREGROUND,
+command! sshfs
+        \ : let $SSH_FILE = system('mktemp /tmp/XXXX.sshfs')
+        \ | execute '!echo ''-o allow_other,default_permissions,follow_symlinks,kernel_cache,reconnect,ServerAliveInterval=60,ServerAliveCountMax=3 %a'' > $SSH_FILE; ls $SSH_FILE %%U'
+        \ | execute 'normal l'
+        \ | execute '!rm $SSH_FILE'
+
+
+" Directory
+filetype */
+        \ {Explore in nomacs}
+        \ nomacs %c 2> /dev/null %i &,
+
+" Default viewer
+filetype *[^/]
+        \ {Check filetype}
+        \ file -b %c %S,
+        \ {Open in Hexyl}
+        \ hexyl %c | less -r,
+        \ {Open in nVim}
+        \ nvim %f,
+fileviewer *[^/] env -uCOLORTERM file -bL --mime "%c" | grep -q '^text' && bat --color always --wrap never --pager never --style=plain,,changes %c || xxd -l1024 %c | cut -d" " -f11 | column

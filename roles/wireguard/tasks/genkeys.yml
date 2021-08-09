@@ -1,0 +1,39 @@
+---
+- name: Create private/public keypair
+  shell:
+    chdir: /etc/wireguard
+    cmd: umask 077 & wg genkey | tee privatekey | wg pubkey > publickey
+  register: wg_keypair
+  changed_when: wg_keypair.rc > -1
+
+- name: Register private key
+  slurp:
+    src: '/etc/wireguard/privatekey'
+  register: wg_privkey
+- set_fact:
+    wg_privkey: '{{ wg_privkey.content | b64decode | trim }}'
+
+- name: Register public key
+  slurp:
+    src: '/etc/wireguard/publickey'
+  register: wg_pubkey
+- set_fact:
+    wg_pubkey: '{{ wg_pubkey.content | b64decode | trim }}'
+    wg_sum_pubkey: '{{ wg_pubkey.content | b64decode | trim }}'
+
+- name: Verify that both keys are of expected length
+  set_fact:
+    wg_keys_valid: true
+  when: wg_pubkey | length == 44 and wg_privkey | length == 44
+
+- name: Assert keys length validation
+  assert:
+    that: wg_keys_valid is defined
+
+- name: Delete keyfiles
+  file:
+    path: '/etc/wireguard/{{ item }}'
+    state: absent
+  with_items:
+    - privatekey
+    - publickey

@@ -1,0 +1,8 @@
+---
+- name: Reload ALSA configs
+  command: alsaucm reload
+  register: alsa_reloaded
+  changed_when: alsa_reloaded.rc != 0
+  become: True
+  listen: 'reload alsa'
+  failed_when: False

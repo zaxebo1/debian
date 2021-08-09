@@ -1,0 +1,80 @@
+---
+- name: Install wireguard
+  apt:
+    name: ['wireguard', 'wireguard-tools']
+    state: present
+  tags:
+    - wg_install
+
+- name: Run sanity-checks
+  import_tasks: assert_main.yml
+  become: True
+  tags:
+    - wg_assert_main
+
+- name: Process provided private key
+  import_tasks: peerkey.yml
+  become: True
+  when: wg_peerkey | string | length == 44
+  tags:
+    - wg_peerkey
+
+- name: Generate a pair of public/private keys
+  import_tasks: genkeys.yml
+  become: True
+  when: not wg_peerkey | bool
+  tags:
+    - wg_genkeys
+
+- name: Generate config file
+  import_tasks: genconfig.yml
+  become: True
+  tags:
+    - wg_genconfig
+
+- name: Amend UFW ruleset
+  import_tasks: ufw.yml
+  become: True
+  notify: 'reload ufw'
+  tags:
+    - wg_ufw
+
+- name: Enable routing in sysctl
+  lineinfile:
+    path: /etc/sysctl.conf
+    line: 'net.ipv4.ip_forward=1'
+    state: present
+  when: wg_forward
+  notify: 'reload sysctl'
+  tags:
+    - wg_sysctl_routing
+
+- name: Enable Wireguard systemd service and make sure it's stopped
+  systemd:
+    name: 'wg-quick@{{ wg_iface }}.service'
+    enabled: True
+    masked: False
+    state: stopped
+  when: wg_autostart
+  notify:
+    - 'reread systemd'
+    - 'reload systemd'
+  tags:
+    - wg_systemd
+
+- name: Run all relevant handlers
+  meta: flush_handlers
+
+- name: Start Wireguard daemon
+  systemd:
+    name: 'wg-quick@{{ wg_iface }}.service'
+    state: started
+    enabled: True
+  when: wg_start
+  tags:
+    - wg_systemd
+
+- name: Display summary
+  import_tasks: summary.yml
+  tags:
+    - wg_summary

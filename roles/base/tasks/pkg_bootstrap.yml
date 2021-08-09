@@ -1,0 +1,143 @@
+---
+- name: Purge contradictory packages
+  apt:
+    pkg: '{{ base_pkg_remove }}'
+    state: absent
+    purge: True
+    autoremove: True
+  when: base_pkg_remove | length > 0
+
+- name: Install HTTPs apt transport
+  apt:
+    pkg: apt-transport-https
+    state: present
+
+- name: Copy /etc/apt/sources.list
+  copy:
+    src: conf/sources.list
+    dest: /etc/apt/sources.list
+    owner: root
+    mode: 0644
+
+- name: Download information about latest versions
+  apt:
+    update-cache: True
+    cache_valid_time: 3600
+
+- name: Update all packages
+  apt:
+    name: '*'
+    state: latest
+
+- name: Dist-upgrade
+  apt:
+    upgrade: 'dist'
+
+- name: Run `apt autoremove`
+  apt:
+    autoremove: true
+
+- name: Merge basics into the global install list
+  set_fact:
+    base_list_global: '{{ base_list_global | union(base_list_basics) }}'
+  vars:
+    base_list_basics:
+      - bash-completion
+      - ca-certificates
+      - curl
+      - gnupg2
+      - libpam-passwdqc
+      - libpam-tmpdir
+      - lua5.4 # Used by Knot and others, hence in "basics"
+      - needrestart
+      - net-tools
+      - rng-tools5
+      - rsync
+      - ufw
+      - unattended-upgrades
+      - bluez-firmware
+      - firmware-atheros
+      - firmware-iwlwifi
+      - firmware-linux-free
+      - firmware-misc-nonfree
+      - firmware-realtek
+      - fwupd-amd64-signed
+
+- name: Merge AMD-specific packages
+  set_fact:
+    base_list_global: '{{ base_list_global | union(base_list_amd) }}'
+  vars:
+    base_list_amd:
+      - amd64-microcode
+      - firmware-amd-graphics
+      - mesa-va-drivers
+  when: '"AMD" in cpu_vendor'
+
+- name: Merge Intel-specific packages
+  set_fact:
+    base_list_global: '{{ base_list_global | union(base_list_intel) }}'
+  vars:
+    base_list_intel:
+      - firmware-intel-sound
+      - intel-media-va-driver-non-free
+      - intel-microcode
+      - iucode-tool
+  when: '"Intel" in cpu_vendor'
+
+- name: Merge Terminus font into the global install list
+  set_fact:
+    base_list_global: '{{ base_list_global | union(["fonts-terminus-otb"]) }}'
+  when: base_set_dpkg_console
+
+- name: Merge KresD and openresolv into the global install list
+  set_fact:
+    base_list_global: '{{ base_list_global | union(base_list_kresd) }}'
+  vars:
+    base_list_kresd:
+      - knot-resolver
+      - openresolv
+  when: base_kresd_install
+
+- name: Merge `mokutil` into the global install list
+  set_fact:
+    base_list_global: '{{ base_list_global | union(["mokutil"]) }}'
+  when: base_bootmode.stdout | bool
+
+# -------------------------------
+
+- name: Install selected packages
+  apt:
+    pkg: '{{ base_list_global }}'
+    state: present
+  delay: 3
+  retries: 3
+
+# -------------------------------
+
+- name: Call python3 a python
+  file:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    state: link
+  with_items:
+      - { src: '/usr/bin/python3', dest: '/usr/bin/python' }
+      - { src: '/usr/share/man/man1/python3.1.gz', dest: '/usr/share/man/man1/python.1.gz' }
+
+- name: Check if lua v5.4 is setup properly
+  stat:
+    path: '{{ item }}'
+  with_items:
+    - "/etc/alternatives/lua-interpretor"
+    - "/usr/bin/lua"
+    - "/usr/bin/luac"
+  register: lua_stat
+
+# Community `update-alternatives` modules does not support slave invocation, we have to use the shell command
+- name: Set lua5.4 as default `lua` command
+  shell: '{{ item }}'
+  with_items:
+    - update-alternatives --install /etc/alternatives/lua-interpretor lua /usr/bin/lua5.4 1
+    - update-alternatives --install /usr/bin/lua lua-interpreter /usr/bin/lua5.4 130 --slave /usr/share/man/man1/lua.1.gz lua-manual /usr/share/man/man1/lua5.4.1.gz
+    - update-alternatives --install /usr/bin/luac lua-compiler /usr/bin/luac5.4 130 --slave /usr/share/man/man1/luac.1.gz lua-compiler-manual /usr/share/man/man1/luac5.4.1.gz
+  become: True
+  when: lua_stat.results | json_query( '[*].stat.exists' ) | unique | string != "[True]"

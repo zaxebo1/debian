@@ -1,0 +1,22 @@
+---
+- name: Re-read systemd settings
+  systemd:
+    daemon_reload: True
+  become: True
+  listen: 'reread systemd'
+
+- name: Reload systemd
+  systemd:
+    daemon_reexec: True
+  become: True
+  listen: 'reload systemd'
+
+- name: Reload ufw
+  command: ufw reload
+  become: True
+  listen: 'reload ufw'
+
+- name: Reload sysctl
+  shell: sysctl --system
+  become: True
+  listen: 'reload sysctl'

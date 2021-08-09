@@ -1,0 +1,45 @@
+---
+- name: Create NetworkManager config folder
+  file:
+    path: /etc/NetworkManager/conf.d/
+    state: directory
+    recurse: True
+
+- name: Ensure NetworkManager won't override resolv.conf
+  copy:
+    dest: /etc/NetworkManager/conf.d/no-dns.conf
+    content: '[main]\ndns=none\n'
+
+- name: Configure resolvconf
+  copy:
+    dest: /etc/resolvconf.conf
+    content: 'name_servers=127.0.0.1'
+
+- name: Ensure `dhclient` won't override resolv.conf
+  copy:
+    dest: /etc/dhcp/dhclient-enter-hooks.d/leave_my_resolv_conf_alone
+    content: 'make_resolv_conf() { :; }'
+    mode: 0755
+
+- name: Process and copy Knot-Resolver template to the target host
+  template:
+    src: kresd.j2
+    dest: /etc/knot-resolver/kresd.conf
+  notify:
+    - restart kresd
+
+- name: Switch to the local resolver
+  copy:
+    dest: /etc/resolv.conf
+    content: 'nameserver 127.0.0.1'
+
+- name: Make /etc/resolv.conf immutable
+  file:
+    path: /etc/resolv.conf
+    attr: ie
+
+- name: Enable Knot resolver
+  service:
+    name: kresd@1
+    enabled: True
+    state: started

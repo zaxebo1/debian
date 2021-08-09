@@ -1,0 +1,393 @@
+---
+  # Utilities
+- block:
+
+  - name: Create Perl modules folder
+    file:
+      path: '/usr/local/lib/site_perl/'
+      state: directory
+
+  - name: Copy diff-so-fancy, its dependencies and z.lua with czmod
+    copy:
+      src: 'bin/{{ item.src }}'
+      dest: '{{ item.dest }}'
+      mode: '{{ item.mode }}'
+      owner: root
+    with_items:
+      - { src: 'diff-so-fancy.pl', dest: '/usr/local/bin/diff-so-fancy'             , mode: 'a+x'}
+      - { src: 'DiffHighlight.pm', dest: '/usr/local/lib/site_perl/DiffHighlight.pm', mode: '0644'}
+      - { src: 'z.lua'           , dest: '/usr/local/bin/z.lua'                     , mode: 'a+x' }
+      - { src: 'czmod.bash'      , dest: '/usr/local/bin/czmod.bash'                , mode: 'a+x' }
+      - { src: 'czmod'           , dest: '/usr/local/bin/czmod'                     , mode: 'a+x' }
+
+  - name: Link `bar` and `fd` binaries to their commonly used names
+    file:
+      src: '{{ item.src }}'
+      dest: '{{ item.dest }}'
+      state: link
+      force: True
+      follow: False
+    loop:
+      - { src: '/usr/bin/batcat', dest: '/usr/bin/bat' }
+      - { src: '/usr/bin/fdfind', dest: '/usr/bin/fd' }
+
+  - name: Install neovim and vifm without 'recommended' additions
+    apt:
+      name: '{{ pkg }}'
+      install_recommends: False
+    vars:
+      pkg:
+        - vifm
+        - neovim
+
+  - name: Merge utilitites into the global install list
+    set_fact:
+      sw_list_global: '{{ sw_list_global | union(sw_list_utils) }}'
+    vars:
+      sw_list_utils:
+        - ack
+        - apparmor-profiles
+        - apparmor-profiles-extra
+        - apparmor-utils
+        - apt-listchanges
+        - aria2
+        - atool
+        - bat
+        - bc
+        - checksec
+        - curl
+        - debian-goodies
+        - debian-security-support # check-support-status
+        - dfc
+        - entr
+        - exfatprogs
+        - fd-find
+        - fzf
+        - gawk
+        - git
+        - gnupg2
+        - grc
+        - hstr
+        - htop
+        - jq
+        - linux-cpupower
+        - ncal
+        - ncdu
+        - p7zip-full
+        - powertop
+        - rar
+        - ripgrep
+        - rpl
+        - rsync
+        - silversearcher-ag
+        - tmux
+        - tree
+        - universal-ctags
+        - unrar
+        - unzip
+        - wget
+        - whois
+
+  when: sw_setup_utils
+  # block end (Utilities)
+
+- name: Merge Wayland into the global install list
+  set_fact:
+    sw_list_global: '{{ sw_list_global | union(sw_list_wayland) }}'
+  vars:
+    sw_list_wayland:
+      - adwaita-icon-theme
+      - adwaita-qt
+      - archivemount
+      - brotli
+      - colortest-python
+      - command-not-found
+      - gcolor3
+      - gnome-icon-theme
+      - gnome-themes-standard
+      - grim
+      - keepassxc
+      - libglib2.0-bin # gsettings
+      - libplist-utils
+      - libsixel-bin
+      - light
+      - lz4
+      - mako-notifier
+      - physlock
+      - qt5ct
+      - qtwayland5
+      - rlwrap # cht.sh dependency
+      - scdaemon
+      - slurp # screen area selector
+      - socat
+      - sway
+      - swaybg
+      - swayidle
+      - undertime
+      - unicode-data
+      - waybar
+      - foot
+      - foot-terminfo
+      - wdisplays
+      - wf-recorder
+      - wl-clipboard
+      - wofi
+      - yubioath-desktop
+      - zstd
+  when: sw_setup_wayland
+
+- name: Merge clevis into the global install list
+  set_fact:
+    sw_list_global: '{{ sw_list_global | union(sw_list_clevis) }}'
+  vars:
+    sw_list_clevis:
+      - clevis
+      - clevis-initramfs
+      - clevis-luks
+      - clevis-systemd
+      - clevis-tpm2
+  when: sw_setup_clevis
+
+- name: Merge fonts into the global install list
+  set_fact:
+    sw_list_global: '{{ sw_list_global | union(sw_list_fonts) }}'
+  vars:
+    sw_list_fonts:
+      - fonts-ibm-plex
+      - fonts-jetbrains-mono
+      - fonts-liberation
+      - fonts-powerline
+      - fonts-recommended
+      - fonts-terminus
+      - fonts-terminus-otb
+      - fonts-ubuntu
+  when: sw_setup_fonts
+
+- name: Merge fs into the global install list
+  set_fact:
+    sw_list_global: '{{ sw_list_global | union(sw_list_fs) }}'
+  vars:
+    sw_list_fs:
+      - dosfstools
+      - fuse-zip
+      - fuseiso
+      - gocryptfs
+      - udisks2
+  when: sw_setup_fs
+
+- name: Merge dev into the global install list
+  set_fact:
+    sw_list_global: '{{ sw_list_global | union(sw_list_dev) }}'
+  vars:
+    sw_list_dev:
+      - bpython
+      - cargo
+      - git
+      - git-sizer
+      - hexyl
+      - libxml2-utils # xmllint
+      - make
+      - pax-utils
+      - python3-pip
+      - python3-virtualenv
+      - rustc
+      - strace
+  when: sw_setup_dev
+
+- name: Merge office into the global install list
+  set_fact:
+    sw_list_global: '{{ sw_list_global | union(sw_list_office) }}'
+  vars:
+    sw_list_office:
+      - antiword
+      - catdoc
+      - dbus-x11 # needed by loffice apparently
+      - dictionaries-common
+      - djvulibre-bin
+      - docx2txt
+      - html2text
+      - hunspell
+      - hunspell-en-au
+      - liblibreofficekitgtk # needed for LO menus
+      - libreoffice-gtk3
+      - libreoffice-l10n-en-gb
+      - libreoffice-style-sifr
+      - lyx
+      - mythes-en-au
+      - odt2txt
+      - pandoc
+      - unrtf
+      - wordnet
+      - wordnet-sense-index
+      - wv
+  when: sw_setup_office
+
+- name: Merge internet into the global install list
+  set_fact:
+    sw_list_global: '{{ sw_list_global | union(sw_list_internet) }}'
+  vars:
+    sw_list_internet:
+      - filezilla
+      - firefox-esr
+      - firefox-esr-l10n-en-gb
+      - nmap
+      - bind9-dnsutils
+      - syncthing
+      - weechat
+  when: sw_setup_internet
+
+  # Setup multimedia
+- block:
+
+  - name: Merge multimedia into the global install list
+    set_fact:
+      sw_list_global: '{{ sw_list_global | union(sw_list_multimedia) }}'
+    vars:
+      sw_list_multimedia:
+          - atomicparsley # youtube-dl, merges covers into audio files
+          - ffmpeg
+          - id3v2
+          - imv
+          - libimage-exiftool-perl
+          - mpd
+          - mpv
+          - ncmpcpp
+          - youtube-dl
+
+  - name: Create mpd lyrics folder
+    file:
+      path: '{{ ansible_env.HOME }}/.cache/mpd/lyrics/'
+      state: directory
+      recurse: True
+    become: False
+
+  when: sw_setup_multimedia
+  # Block end (multimedia)
+
+  # Wireless
+- block:
+
+    # TODO:
+    #   Remove this once linux-image and FWs are updated
+    #   Prevents iwd from being stopped/started. Restart works.
+    #   Context: https://bugs.gentoo.org/746539
+    #   Should be fixed by: https://lore.kernel.org/linux-wireless/iwlwifi.20210409123755.ba2ea961f4ae.I8fde32d3196e860efa3b4ec464c42194195b42ec@changeid/
+    # - name: Instruct systemd to hold IWD until link is up
+    #   lineinfile:
+    #     path: '{{ item }}'
+    #     line: 'ExecStartPre=ip link set wlan0 up'
+    #     insertafter: 'StateDirectoryMode=0700'
+    #   with_items:
+    #     - '/lib/systemd/system/iwd.service'
+    #     - '/usr/lib/systemd/system/iwd.service'
+    #     - '/etc/systemd/system/multi-user.target.wants/iwd.service'
+
+  - name: Merge wireless into the global install list
+    set_fact:
+      sw_list_global: '{{ sw_list_global | union(sw_list_wireless) }}'
+    vars:
+      sw_list_wireless:
+        - blueman
+        - bluez-firmware
+        - iwd
+        - wavemon
+
+  when: sw_setup_wireless
+  # block end
+
+- name: Merge audio into the global install list
+  set_fact:
+    sw_list_global: '{{ sw_list_global | union(sw_list_audio) }}'
+  vars:
+    sw_list_audio:
+      - alsa-firmware-loaders
+      - alsa-topology-conf
+      - alsa-ucm-conf
+      - alsa-utils
+      - firmware-sof-signed
+  when: sw_setup_audio
+
+- name: Merge virtio packages to the global list
+  set_fact:
+    sw_list_global: '{{ sw_list_global | union(sw_list_virtio) }}'
+  vars:
+    sw_list_virtio:
+      - virt-manager
+      - libvirt-daemon-config-network
+      - libvirt-daemon-config-nwfilter
+      - libvirt-daemon-system
+  when: sw_virtio_install
+
+- name: Merge ddcutil into the global install list
+  set_fact:
+    sw_list_global: '{{ sw_list_global | union(["ddcutil"]) }}'
+  when: sw_setup_i2c
+
+# -------------------------------
+
+- name: Install selected packages
+  apt:
+    pkg: '{{ sw_list_global }}'
+    state: present
+  delay: 3
+  retries: 3
+
+# -------------------------------
+
+  # Has to be after the install step as i2c group & i2c-dev do not exist yet
+- block:
+
+  - name: Add user to i2c group
+    user:
+      append: True
+      groups: i2c
+      name: '{{ ansible_env.USER }}'
+
+  - name: Load `i2c-dev` module on boot
+    copy:
+      content: 'i2c-dev'
+      dest: /etc/modules-load.d/i2c-dev.conf
+    become: true
+
+  when: sw_setup_i2c
+  # block end (i2c)
+
+  # Install user-provided packages if there are any
+- block:
+
+    - name: Check if user-supplied .DEBs are installed
+      command: 'dpkg-query -W {{ item }}'
+      register: dpkg_check
+      failed_when: dpkg_check.rc > 1
+      changed_when: dpkg_check.rc == 1
+      loop: '{{ sw_setup_deb }}'
+
+    - name: Create directory to store .deb files
+      file:
+        path: '{{ lookup("env", "TMPDIR") }}/st_deb'
+        state: directory
+      when: dpkg_check is changed
+
+    - name: Copy .deb packages to the remote host
+      copy:
+        src: 'deb/{{ item }}'
+        dest: '{{ lookup("env", "TMPDIR") }}/st_deb/{{ item }}'
+      loop: '{{ sw_setup_deb }}'
+      register: debs_copy_status
+      when: dpkg_check is changed
+
+    - name: Install user-supplied .deb packages
+      apt:
+        allow_unauthenticated: True
+        deb: '{{ item["dest"] }}'
+      loop: '{{ debs_copy_status.results }}'
+      when: ansible_architecture == "x86_64" and dpkg_check is changed
+
+    - name: Delete temporarily storage folder
+      file:
+        path: '{{ lookup("env", "TMPDIR") }}/st_deb'
+        state: absent
+      when: dpkg_check is changed
+
+  when: sw_setup_deb | length > 0
+  # block end

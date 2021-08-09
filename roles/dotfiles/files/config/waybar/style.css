@@ -1,0 +1,153 @@
+/*
+ *
+ * https://github.com/Alexays/Waybar/wiki/Styling
+ *
+ */
+
+* {
+    border: none;
+    font-family: Terminus;
+    font-size: 16px;
+    min-height: 26px;
+}
+
+window#waybar {
+    background-color: #000000;
+    color: #999999;
+}
+
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+/* Custom colour for a specific app */
+window#waybar.foot {
+    background-color: #000000;
+}
+
+#workspaces button {
+    padding: 0 12px 0 12px;
+    min-width: 0; /* width fix */
+    background-color: transparent;
+    color: #666666;
+    border-radius: 0px;
+}
+
+#workspaces button:hover {
+    color: #FFFFFF;
+}
+
+#workspaces button.focused {
+    color: #c1c1c1;
+}
+
+#workspaces button.urgent {
+    background-color: #eb4d4b;
+}
+
+#mode {
+    background-color: #990000;
+    color: #ffffff;
+    min-width: 450px;
+    padding: 0px 10px 0px 10px;
+}
+
+/* #tooltip { */
+/*   background-color: #cccccc; */
+/*   color: #990000; */
+/* } */
+/*  */
+/* #tooltip label { */
+/*   background-color: #af4f4b; */
+/*   color: #2fefaf; */
+/* } */
+
+#custom-clock {
+  color: #d1d1d1;
+}
+
+#battery.warning {
+   color:       rgba(255, 210, 4, 1);
+}
+
+#battery.critical {
+    color:      rgba(238, 46, 36, 1);
+}
+
+#battery.charged {
+    color:      rgba(0, 100, 0, 1);
+}
+
+#battery {
+    padding-right: 10px;
+}
+
+#battery.charging {
+    background-color: #073d1e;
+}
+
+#battery.critical:not(.charging) {
+    background-color: #f53c3c;
+    color: #ffffff;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+label:focus {
+    background-color: #000000;
+    color: #afa;
+}
+
+#backlight {
+    background-color: #90b1b1;
+}
+
+#network.disconnected {
+    color: #333333;
+}
+
+#pulseaudio {
+    background-color: #f1c40f;
+    color: #000000;
+}
+
+#custom-media {
+    background-color: #66cc99;
+    color: #2a5c45;
+    min-width: 100px;
+}
+
+#custom-media.custom-spotify {
+    background-color: #66cc99;
+}
+
+#custom-media.custom-vlc {
+    background-color: #ffa000;
+}
+
+#temperature.critical {
+    background-color: #eb4d4b;
+}
+
+#idle_inhibitor {
+    padding-left: 10px;
+    padding-right: 10px;
+    color: #333333;
+}
+
+#idle_inhibitor.activated {
+    background-color: #990000;
+    color: #ffffff;
+    border-radius: 6px;
+}
+
+#custom-sway-scratch.many {
+    color: rgba(232, 102, 194, 1);
+}
+
+#custom-sway-scratch.one {
+    color: rgba(97, 175, 239, 1);
+}

@@ -1,0 +1,36 @@
+---
+- name: Check if nginx is/was installed
+  shell:
+    cmd: 'dpkg-query --show nginx'
+  failed_when: false
+  changed_when: false
+  register: esc_nginx_dpkg
+
+- name: Install certbot
+  apt:
+    pkg:
+      - certbot
+    state: present
+
+  # >> If nginx isn't installed...
+- block:
+
+    # Fails if ipv6 is disabled in kernel, #869799
+  - name: Install nginx
+    apt:
+      pkg:
+        - 'nginx-{{ ngx_flavour }}'
+        - python3-certbot-nginx
+      state: latest
+    register: esc_nginx_installed
+    failed_when: False
+    when: esc_nginx_dpkg.rc != 0
+
+  - name: Work around bug `#869799`
+    file:
+      path: /etc/nginx/sites-enabled/default
+      state: absent
+
+  when: esc_nginx_dpkg.rc != 0
+  # << Block end
+

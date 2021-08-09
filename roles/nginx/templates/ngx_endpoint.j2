@@ -1,0 +1,29 @@
+server {
+    server_name {{ item }};
+    {% if ngx_provision_https %}
+    listen 443 ssl http2;
+    {% endif %}
+    root /var/www/html/{{ item | regex_replace("\.", "-") }};
+
+    include /etc/nginx/snippets/locations.conf;
+    include /etc/nginx/snippets/headers.conf;
+
+    index index.html index.htm;
+    add_header Access-Control-Allow-Origin "https://{{ item }}" always;
+
+    {% if ngx_provision_https %}
+    ssl_certificate /etc/letsencrypt/live/{{ item }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ item }}/privkey.pem;
+    {% endif %}
+}
+
+server {
+    {% if ngx_provision_https %}
+    if ($host = {{ item }}) {
+        return 301 https://$host$request_uri;
+    }
+    {% endif %}
+    listen      80;
+    server_name {{ item }};
+    return 404;
+}

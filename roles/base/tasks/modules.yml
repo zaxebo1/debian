@@ -1,0 +1,51 @@
+---
+- name: Blacklist kernel modules
+  template:
+    src: blacklist.j2
+    dest: /etc/modprobe.d/blacklist.conf
+    owner: root
+    mode: 0644
+
+- name: Block uncommon network protocols
+  copy:
+    src: conf/uncommon-network-protocols.conf
+    dest: /etc/modprobe.d/uncommon-network-protocols.conf
+
+- name: Enable Intel coretemp module
+  lineinfile:
+    path: /etc/modules
+    line: 'coretemp'
+    insertafter: EOF
+  when:
+    - '"Intel" in cpu_vendor'
+
+  # Intel HDA options
+- block:
+
+  - name: Create Intel HDA modprobe drop-in
+    file:
+      path: /etc/modprobe.d/snd-hda-intel.conf
+      state: touch
+      modification_time: preserve
+      access_time: preserve
+
+  - name: Add Intel HDA parameters
+    lineinfile:
+      path: /etc/modprobe.d/snd-hda-intel.conf
+      line: 'options snd-hda-intel {{ item }}'
+      state: present
+    with_items: '{{ base_hda_options }}'
+
+  when: base_hda_options | length > 0 and not base_disable_nonsof
+  # block end
+
+- name: Prevent iwlwifi from trying to load 'yoyo'
+  copy:
+    dest: /etc/modprobe.d/iwlwifi_antiyoyo.conf
+    content: 'options iwlwifi enable_ini=N'
+
+- name: Disable bluetooth autosuspend
+  copy:
+    dest: '/etc/modprobe.d/btusb_antisuspend.conf'
+    content: 'options btusb enable_autosuspend=0'
+  when: base_disable_bt_autosuspend

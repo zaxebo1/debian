@@ -1,0 +1,11 @@
+---
+- name: Download firmware files outside of the tree and install them
+  get_url:
+    backup: yes
+    checksum: '{{ item.checksum }}'
+    dest: '/lib/firmware/{{ item.dest }}'
+    owner: root
+    url: '{{ item.src }}'
+    validate_certs: True
+  with_items: '{{ base_fw_list }}'
+  when: base_fw_list | length > 0

@@ -1,0 +1,283 @@
+---
+- hosts: localhost
+  strategy: free
+  tasks:
+
+    #
+    # All parameters are documented in the respective README.md files for each role
+    #
+
+  - name: Execute `base` role
+    import_role:
+      name: base
+    tags: role_base
+    vars:
+      base_allow_reboot: false
+      base_limit_ssh: false
+      base_audit: false
+      base_disable_bluetooth: false
+      base_disable_bt_autosuspend: false
+      base_disable_firewire: true
+      base_disable_hfs: true
+      base_disable_nonsof: true
+      base_disable_speaker: false
+      base_disable_thunderbolt: false
+      base_fb_font_size: 10x18
+      base_fstab_noexec: true
+      base_fw_list:
+        - { src: 'https://raw.githubusercontent.com/Realtek-OpenSource/android_hardware_realtek/rtk1395/bt/rtkbt/Firmware/BT/rtl8761b_config',
+            dest: 'rtl_bt/rtl8761b_config.bin',
+            checksum: 'sha256:aa86a092ee58e96256331d5c28c199ceaadec434460e98e7dea20e411e1aa570' }
+        - { src: 'https://raw.githubusercontent.com/Realtek-OpenSource/android_hardware_realtek/rtk1395/bt/rtkbt/Firmware/BT/rtl8761b_fw',
+            dest: 'rtl_bt/rtl8761b_fw.bin',
+            checksum: 'sha256:0b59a1f2422c006837c4b5e46b59d49bfdbca1defb958adbbc0d57ebdc19cc82' }
+      base_generate_moduli: false
+      base_grub_optional: "i8042.unlock=1"
+      base_grub_timeout: 3
+      base_hide_pid: false
+      base_init_on_free: false
+      base_locale: en_AU.UTF-8
+      base_locale_singular: true
+      base_logind_configure: false
+      base_logind_idle_action: suspend
+      base_logind_idle_time: 600
+      base_logind_lid_action: suspend
+      base_logind_powerbutton_action: poweroff
+      base_nmi_watchdog: false
+      base_pkg_remove:
+        - wpasupplicant
+        - rpcbind
+        - exim4
+        - bind9
+        - avahi-daemon
+        - dnsmasq
+        - ntp
+      base_kresd_blocklist: ""
+      base_kresd_install: true
+      base_kresd_listen_on_ip: 127.0.0.1
+      base_kresd_primary_hostname: dns.quad9.net
+      base_kresd_primary_ip: 9.9.9.9
+      base_kresd_secondary_hostname: dns.quad9.net
+      base_kresd_secondary_ip: 149.112.112.112
+      base_kresd_tls: true
+      base_set_capslock: true
+      base_set_dpkg_console: true
+      base_set_dpkg_overrides: true
+      base_set_hostname: false
+      base_set_sigenforce: true
+      base_sleep_enabled: true
+      base_sshd_less_secure: false
+      base_sudo_cmd_nopwd: "/usr/bin/alsaucm"
+      base_sudo_set: true
+      base_sudo_user: '{{ ansible_env.USER }}'
+      base_swappiness: 30
+      base_thermald_profiles:
+        - thermal-conf.xml.0
+        - thermal-conf.xml.1
+        - thermal-conf.xml.2
+        - thermal-conf.xml.3
+        - thermal-conf.xml.4
+        - thermal-conf.xml.auto
+      base_timezone: Australia/Adelaide
+      base_trackpoint_drift: 25
+      base_ufw_rule:
+        - { comment: 'Drop incoming TCP traffic from 172.16.17.92 to port 22',
+            direction: 'in',
+            from: '172.16.17.92',
+            port: '22',
+            proto: 'tcp',
+            rule: 'deny' }
+        - { comment: 'Allow all traffic from 192.168.122.*',
+            direction: 'in',
+            from: '192.168.122.0/16',
+            port: '1:65000',
+            proto: 'tcp',
+            rule: 'allow' }
+      base_ufw_service:
+        - { comment: 'Reject Yahoo messenger from 192.168.67.83',
+            rule: 'deny',
+            from: '192.168.67.83',
+            service: 'Yahoo' }
+      base_vm_writeback: 1500
+
+
+  - name: Execute `software` role
+    import_role:
+      name: software
+    tags: role_software
+    vars:
+      sw_alsa_out_card: 0
+      sw_alsa_out_device: 0
+      sw_setup_audio: true
+      sw_setup_clevis: true
+      sw_setup_deb: []
+      sw_setup_dev: true
+      sw_setup_fonts: true
+      sw_setup_fs: true
+      sw_setup_i2c: true
+      sw_setup_internet: true
+      sw_setup_multimedia: true
+      sw_setup_office: true
+      sw_setup_utils: true
+      sw_setup_wayland: true
+      sw_setup_wireless: true
+      sw_systemd_units_disable: ['mpd.service','rsync.service']
+      sw_systemd_units_enable: ['syncthing@{{ ansible_env.USER }}.service', 'iwd.service']
+      sw_systemd_units_masked: ['systemd-backlight@backlight:acpi_video0.service', 'mpd.service']
+      sw_virtio_install: true
+      sw_virtio_network_autostart: true
+      sw_virtio_use_default_network: true
+      sw_virtio_user_addgroup: true
+
+
+  - name: Execute `dotfiles` role
+    import_role:
+      name: dotfiles
+    tags: role_dotfiles
+    vars:
+      dots_change_tmux_prefix: false
+      # Logic:
+      #   - if `extract_dotfiles` is true, dotfiles are copied to the target host
+      #   - if `extract_dotfiles` is false and target is localhost - link from the role
+      #   - if `extract_dotfiles` is false and target is remote - fail gracefully
+      dots_extract_dotfiles: false
+      dots_bash_emacs_mode: false
+      dots_remote_gitconfig: false
+      dots_setup_fortunes: true
+      dots_setup_neovim: true
+      dots_dotfiles_list:
+        #
+        # Folders must end with '/'
+        #
+        # TODO:
+        #   - Detect if src is a folder and append '/' automatically if it is not there.
+        #
+        - { src: 'Xresources'           , dest: '.Xdefaults'            , state: 'link' }
+        - { src: 'aliases'              , dest: '.aliases.sh'           , state: 'link' }
+        - { src: 'bash_profile'         , dest: '.bash_profile'         , state: 'link' }
+        - { src: 'bashrc'               , dest: '.bashrc'               , state: 'link' }
+        - { src: 'config/bat/'          , dest: '.config/bat'           , state: 'link' }
+        - { src: 'config/fontconfig/'   , dest: '.config/fontconfig'    , state: 'link' }
+        - { src: 'config/foot/'         , dest: '.config/foot'          , state: 'link' }
+        - { src: 'config/gtk-3.0/'      , dest: '.config/gtk-3.0'       , state: 'link' }
+        - { src: 'config/imv/'          , dest: '.config/imv'           , state: 'link' }
+        - { src: 'config/luakit/'       , dest: '.config/luakit'        , state: 'link' }
+        - { src: 'config/mako/config'   , dest: '.config/mako/config'   , state: 'hard' }
+        - { src: 'config/mpd/'          , dest: '.config/mpd'           , state: 'link' }
+        - { src: 'config/mpd/mpd.conf'  , dest: '.mpd/mpd.conf'         , state: 'link' }
+        - { src: 'config/mpv/'          , dest: '.config/mpv'           , state: 'link' }
+        - { src: 'config/ncmpcpp/'      , dest: '.config/ncmpcpp'       , state: 'link' }
+        - { src: 'config/qt5ct/'        , dest: '.config/qt5ct'         , state: 'link' }
+        - { src: 'config/sway/'         , dest: '.config/sway'          , state: 'link' }
+        - { src: 'config/tox/toxic.conf', dest: '.config/tox/toxic.conf', state: 'link' }
+        - { src: 'config/vifm/'         , dest: '.config/vifm'          , state: 'link' }
+        - { src: 'config/vivid/'        , dest: '.config/vivid'         , state: 'link' }
+        - { src: 'config/waybar/'       , dest: '.config/waybar'        , state: 'link' }
+        - { src: 'config/wofi/'         , dest: '.config/wofi'          , state: 'link' }
+        - { src: 'curlrc'               , dest: '.config/curl/.curlrc'  , state: 'link' }
+        - { src: 'gitattributes'        , dest: '.gitattributes'        , state: 'link' }
+        - { src: 'gitconfig'            , dest: '.gitconfig'            , state: 'link' }
+        - { src: 'gitconfig-remote'     , dest: '.gitconfig'            , state: 'link' }
+        - { src: 'gitignore'            , dest: '.gitignore'            , state: 'link' }
+        - { src: 'gnupg/gpg-agent.conf' , dest: '.gnupg/gpg-agent.conf' , state: 'link' }
+        - { src: 'gnupg/gpg.conf'       , dest: '.gnupg/gpg.conf'       , state: 'link' }
+        - { src: 'inputrc'              , dest: '.inputrc'              , state: 'link' }
+        - { src: 'man/'                 , dest: '.local/man'            , state: 'link' }
+        - { src: 'muttrc'               , dest: '.muttrc'               , state: 'link' }
+        - { src: 'profile'              , dest: '.profile'              , state: 'link' }
+        - { src: 'ripgreprc'            , dest: '.config/.ripgreprc'    , state: 'link' }
+        - { src: 'ssh_config'           , dest: '.ssh/config'           , state: 'link' }
+        - { src: 'themes/'              , dest: '.themes'               , state: 'link' }
+        - { src: 'tmux.conf'            , dest: '.tmux.conf'            , state: 'link' }
+        - { src: 'vimrc'                , dest: '.vimrc'                , state: 'link' }
+        - { src: 'weechat.conf'         , dest: 'weechat.conf'          , state: 'link' }
+        - { src: 'wgetrc'               , dest: '.config/wgetrc'        , state: 'link' }
+
+
+  - name: Execute `transfer_agent` role
+    import_role:
+      name: transfer_agent
+    tags: role_transfer
+    vars:
+      tag_add_rsync: true
+      tag_agent_group: agents
+      tag_agent_name: xfer_agent
+      tag_pubkey_from_current_user: true
+      tag_pubkey_from_others: true
+      tag_remove_existing_user: true
+
+
+  - name: Execute `wireguard` role
+    import_role:
+      name: wireguard
+    tags: role_wireguard
+    vars:
+      wg_endpoints:
+        - { name: 'Foo',
+            pubkey: 'sPHxX6IiLpcJpgDmoXRuAiuZdKNJsZtsIEDJGK6ubmU=',
+            psk: 'g1p3GiazEwyEoM2RkYh148/bu0w4zXg6S1I8ybw3fT0=',
+            ip: '10.2.0.1',
+            port: '12335',
+            keepalive: '0',
+            allowedips: '10.2.0.0/16' }
+        - { name: 'Bar',
+            pubkey: 'sPHxX6IiLpcJpgDmoXRuAiuZdKNJsZtsIEDJGK6ubmU=',
+            psk: 'g1p3GiazEwyEoM2RkYh148/bu0w4zXg6S1I8ybw3fT0=',
+            ip: '10.3.0.1',
+            port: '22345',
+            keepalive: '45',
+            allowedips: '10.3.0.0/16' }
+      wg_clients:
+        - { name: 'Flob',
+            pubkey: 'WC5a0cSWATZwLsQH1REjGcQsomZyEtRTaAqyRK20emY=',
+            psk: 'yKsg+u7zY9N5rjgR3YE6cSu90aFBpxEPA3uKzK9vJc0=',
+            ip: '10.2.1.10',
+            keepalive: '0' }
+        - { name: 'Fred',
+            pubkey: 'qOwMjZuaVjfmdCSoOQbTp8MPADN+yB5gjRAmddA7jUM=',
+            psk: 'Fo1UMMLxbyPiYwrJ/vE7tqPa66gblskjIc5xyQPsXgg=',
+            ip: '10.3.1.20',
+            keepalive: '90' }
+      wg_autostart: true
+      wg_forward: true
+      wg_iface: wg8
+      wg_overwrite: true
+      wg_peerkey: OIxcoXM0NaNtsSZM7aNGDeqpUiQxkZ4+eG9OmLSFe3k=
+      wg_port: 12345
+      wg_server_ip: 10.0.0.10
+      wg_server_subnet: '10.0.0.0/8'
+      wg_ssh: true
+      wg_start: true
+      wg_systemd: true
+
+
+  - name: Execute `nginx` role
+    import_role:
+      name: nginx
+    tags: role_nginx
+    vars:
+      ngx_cert_email: 'letsencrypt@example.com'
+      ngx_endpoints: ['example.com', 'example.net']
+      ngx_flavour: 'extras'
+      ngx_provision_https: True
+      ngx_resolver: '127.0.0.1'
+
+
+  - name: Execute `EteSync` role
+    import_role:
+      name: etesync
+    tags: role_etesync
+    vars:
+      esc_admin: ''
+      esc_admin_email: 'admin@example.com'
+      esc_cert_email: 'certs@example.com'
+      esc_debug: False
+      esc_provision_https: True
+      esc_hosts: ['etesync.example.com']
+      esc_path: '/var/www/esc_server'
+      esc_port: 80
+      esc_repository: 'https://github.com/etesync/server'
+      esc_rm_existing: True
+      esc_rootdir: '/var/www/html/esc_server'
+      esc_user: 'www-uvicorn'
+      esc_version: '43d5af32d72d5f59de7f31698076becf2430ccaa'

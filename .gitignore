@@ -1,0 +1,7 @@
+/_pack
+/inventory.ini
+/playbook.yml
+roles/dotfiles/files/tmux-remote.conf
+vi*-help.txt
+vi*.1
+vi*info

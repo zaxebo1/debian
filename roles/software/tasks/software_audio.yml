@@ -1,0 +1,34 @@
+---
+- name: Check if asound.conf is present
+  stat:
+    path: /etc/asound.conf
+  register: stat_asound
+  become: True
+
+- name: Backup existing asound.conf
+  copy:
+    remote_src: True
+    src: /etc/asound.conf
+    dest: '/etc/backup_asound_conf_{{ ansible_date_time.epoch }}'
+  when: stat_asound | bool
+  become: True
+
+- name: Remove existing asound.conf
+  file:
+    path: /etc/asound.conf
+    state: absent
+  become: True
+
+- name: Check if ~/.asoundrc is present
+  stat:
+    path: '{{ ansible_env.HOME }}/.asoundrc'
+  register: stat_asound_local
+
+- name: Set ALSA card and device in ~/.asoundrc
+  template:
+    src: alsa.j2
+    dest: '{{ ansible_env.HOME }}/.asoundrc'
+    backup: True
+  when: not stat_asound_local | bool
+  notify:
+    - reload alsa

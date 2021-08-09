@@ -1,0 +1,217 @@
+---
+- name: Check if requested user is present
+  shell:
+    cmd: 'grep {{ tag_agent_name }} /etc/passwd'
+  register: user_grep
+  failed_when: user_grep.stderr | length > 1
+  changed_when: False
+
+- name: Assert that user isn't already present on the system
+  assert:
+    that:
+      - "{{ user_grep.rc | int == 1 }}"
+    fail_msg: 'User "{{ tag_agent_name }}" is found and "tag_remove_existing_user" is set to False.\nAborting.'
+  when: not tag_remove_existing_user
+
+- name: Warning message
+  debug:
+    msg: 'User "{{ tag_agent_name }}" and all its files will be deleted.'
+  when: user_grep.rc | int == 1 and tag_remove_existing_user
+
+- name: Delete pre-existing user
+  user:
+    name: '{{ tag_agent_name }}'
+    state: absent
+    remove: True
+    force: true
+  when: user_grep.rc | int == 0 and tag_remove_existing_user
+
+- name: Ensure agents group is present
+  group:
+    name: '{{ tag_agent_group }}'
+    state: present
+
+- name: Throw random seeds
+  set_fact:
+    rnd_a: '{{ 4096 | random }}'
+    rnd_b: '{{ 4096 | random }}'
+    rnd_c: '{{ 4096 | random }}'
+    rnd_d: '{{ 4096 | random }}'
+    rnd_e: '{{ 4096 | random }}'
+  no_log: true
+
+- name: Create random password and salt
+  set_fact:
+    password_raw: '{{ lookup("password", "/dev/null") }}'
+    salt: '{{ rnd_a+rnd_b+rnd_c+rnd_d+rnd_e }}'
+  no_log: true
+
+- name: 'Create "{{ tag_agent_name }}" user with random password'
+  user:
+    name: '{{ tag_agent_name }}'
+    shell: /bin/sh
+    # The salt is roughly half of what rfc2898 requires due to the limitation in sha512_crypt
+    password: '{{ password_raw | password_hash("sha512", salt[:16]) }}'
+    groups: agents
+  no_log: true
+
+# Delegate to localhost
+- block:
+
+  - name: Register operator's username
+    set_fact:
+      local_user_id: '{{ lookup("env", "USER") }}'
+
+  - name: Get current user's ssh path
+    shell:
+      cmd: 'echo $( getent passwd {{ local_user_id }} | cut -d: -f6 )/.ssh'
+    register: user_ssh_path
+    changed_when: False
+
+  - set_fact:
+      user_ssh_pubfile: '{{ user_ssh_path.stdout }}/id_rsa.pub'
+
+  - name: Check if current user has a pubkey file
+    stat:
+      path: '{{ user_ssh_pubfile }}'
+    register: pubkey_current_user_stat
+    when: tag_pubkey_from_current_user
+
+  - name: Validate file content
+    shell:
+      cmd: 'ssh-keygen -lf {{ user_ssh_pubfile }}'
+    register: pubkey_current_user_validate
+    when: pubkey_current_user_stat.stat['exists']
+    changed_when: pubkey_current_user_validate.rc > -1
+
+  - name: Save pubkey from the current user to a variable
+    set_fact:
+      pubkey_current_content: '{{ lookup("file",user_ssh_pubfile) }}'
+    when: pubkey_current_user_validate.rc | int == 0
+
+  delegate_to: localhost
+  # Block end
+
+- name: Add pubkeys from the user executing this Playbook
+  authorized_key:
+    user: '{{ tag_agent_name }}'
+    state: present
+    key: '{{ pubkey_current_content }}'
+  when:
+    - tag_pubkey_from_current_user
+    - pubkey_current_content is regex("^ssh-rsa")
+
+- name: Add other pubkeys
+  authorized_key:
+    user: '{{ tag_agent_name }}'
+    state: present
+    # Lookup is necessary as `authorized_key` expects content, not a file.
+    key: '{{ lookup("file",item) }}'
+  with_fileglob:
+    - "*.pub"
+  when: tag_pubkey_from_others
+
+- name: chmod/chown homedir to make jail valid
+  file:
+    path: /home/{{ tag_agent_name }}
+    state: directory
+    mode: 0750
+    owner: root
+
+- name: Create data exchange directory
+  file:
+    path: /home/{{ tag_agent_name }}/data
+    state: directory
+    mode: 0755
+    owner: '{{ tag_agent_name }}'
+
+- name: Create README.txt
+  copy:
+    dest: /home/{{ tag_agent_name }}/data/README.txt
+    mode: 0644
+    owner: root
+    content: >
+      Use this folder to store the information.
+
+- name: Create system root dirs within chroot
+  file:
+    path: /home/{{ tag_agent_name }}/{{ item }}
+    state: directory
+    owner: root
+  with_items:
+    - usr
+    - usr/bin
+    - bin
+    - lib
+    - lib/x86_64-linux-gnu
+    - lib64
+
+- name: Copy sh to chroot /bin
+  copy:
+    src: '/bin/sh'
+    dest: '/home/{{ tag_agent_name }}/bin/sh'
+    mode: 0755
+    remote_src: True
+
+- name: Copy rsync to chroot /usr/bin
+  copy:
+    src: '/usr/bin/rsync'
+    dest: '/home/{{ tag_agent_name }}/usr/bin/rsync'
+    mode: 0755
+    remote_src: True
+  when: tag_add_rsync
+
+- name: Copy from /lib
+  copy:
+    src: '/lib/x86_64-linux-gnu/{{ item }}'
+    dest: '/home/{{ tag_agent_name }}/lib/x86_64-linux-gnu/{{ item }}'
+    mode: 0755
+    remote_src: True
+  with_items:
+    - "libacl.so.1"
+    - "libattr.so.1"
+    - "libc.so.6"
+    - "libcrypto.so.1.1"
+    - "libdl.so.2"
+    - "liblz4.so.1"
+    - "libpopt.so.0"
+    - "libpthread.so.0"
+    - "libxxhash.so.0"
+    - "libz.so.1"
+    - "libzstd.so.1"
+
+- name: Copy from /usr/lib
+  copy:
+    src: '/usr/lib/x86_64-linux-gnu/{{ item }}'
+    dest: '/home/{{ tag_agent_name }}/lib/x86_64-linux-gnu/{{ item }}'
+    mode: 0755
+    remote_src: True
+  with_items:
+    - "libattr.so.1"
+    - "libacl.so.1"
+    - "libpopt.so.0"
+
+- name: Copy ld-linux-x86-64.so
+  copy:
+    src: '/lib64/ld-linux-x86-64.so.2'
+    dest: '/home/{{ tag_agent_name }}/lib64/ld-linux-x86-64.so.2'
+    mode: 0755
+    remote_src: True
+
+- name: Remove unnecessary files
+  file:
+    path: '/home/{{ tag_agent_name }}/{{ item }}'
+    state: absent
+  loop:
+    - ".bashrc"
+    - ".bash_profile"
+    - ".bash_logout"
+    - ".profile"
+
+- name: Run all relevant handlers
+  meta: flush_handlers
+
+- name: Finale
+  debug:
+    msg: |
+      * TRANSFER-AGENT ROLE IS COMPLETED *

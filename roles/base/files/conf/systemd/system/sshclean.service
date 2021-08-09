@@ -1,0 +1,11 @@
+[Unit]
+Description=Shutdown SSH before the machine itself
+DefaultDependencies=no
+Before=network.target shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=systemctl kill -s SIGQUIT sshd.service
+
+[Install]
+WantedBy=poweroff.target halt.target reboot.target

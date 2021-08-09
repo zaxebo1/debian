@@ -1,0 +1,34 @@
+---
+- name: Install thermald
+  package:
+    name: thermald
+    state: present
+
+  # TODO:
+  #
+  # - Consider adding --adaptive once v2.4.3 is in Bullseye/testing:
+  #   https://github.com/intel/thermal_daemon/issues/268#issuecomment-855200083
+  #
+  #   Will make XMLs redundant:
+  #   "--adaptive Use DPTF adaptive tables when present.
+  #   This will ignore thermald config via xml files."
+  #
+- name: Prevent thermald from being blocked by dytc_lapmode
+  lineinfile:
+    path: '{{ item }}'
+    line: 'ExecStart=/usr/sbin/thermald --systemd --dbus-enable --ignore-cpuid-check'
+    regexp: '^ExecStart.+'
+  with_items:
+    - '/lib/systemd/system/thermald.service'
+    - '/usr/lib/systemd/system/thermald.service'
+
+- name: Install thermald profiles
+  copy:
+    src: 'conf/thermald/{{ item }}'
+    dest: '/etc/thermald/{{ item }}'
+    owner: root
+    mode: 0644
+  with_items: '{{ base_thermald_profiles }}'
+  notify:
+    - reload systemd
+    - restart thermald

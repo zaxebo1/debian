@@ -1,0 +1,109 @@
+---
+- name: Assert that we are running against the supported distribution
+  assert:
+    that:
+      - ansible_distribution == "Debian"
+      - ansible_distribution_file_variety == "Debian"
+      - ansible_distribution_release == "bullseye"
+      - ( ansible_distribution_major_version | int ) == 11
+    fail_msg: 'This playbook is tested exclusively on Debian Bullseye.\nPlease double-check you are executing the right thing.'
+    success_msg: 'Running against Debian Bullseye at {{ ansible_host }}'
+
+- name: Assert that we are running against the supported kernel version
+  assert:
+    that: '{{ ansible_facts["kernel"].startswith("5.10") }}'
+    success_msg: 'Detected 5.10 LTS kernel'
+    fail_msg: 'Unsupported kernel version, aborting.'
+
+  # Hostname
+- block:
+
+  - name: Assert that desirable hostname is valid
+    assert:
+      that: inventory_hostname is regex('^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$')
+      fail_msg: 'Requested hostname is invalid.\nSee the RFC #1123'
+      success_msg: 'Will set target hostname to "{{ inventory_hostname }}"'
+    when: inventory_hostname | string | length > 0
+
+  when: base_set_hostname
+  # block end
+
+- name: Check if user has an active sudo ticket
+  shell:
+    cmd: 'sudo whoami'
+  failed_when: False
+  changed_when: False
+  register: base_sudo_ticket
+
+- name: Assert that sudo ticket is valid
+  assert:
+    that:
+      - base_sudo_ticket.rc == 0
+      - base_sudo_ticket.stdout == 'root'
+    success_msg: 'sudo ticket is valid, enjoy the show.'
+    fail_msg: |
+      Unable to obtain sudo rights, output:
+        {{ base_sudo_ticket | to_nice_yaml }}
+
+- name: Register user's home folder status
+  stat:
+    path: '{{ ansible_facts.user_dir }}'
+  register: user_homedir
+
+- name: QC user's home folder permissions and path
+  assert:
+    that:
+      - ansible_facts.user_dir == ansible_env.HOME
+      - user_homedir.stat.writeable and user_homedir.stat.readable
+    fail_msg: '$HOME resolves differently or homedir of the target user is not writeable'
+
+- name: Calculate maximum number of inotify watches
+  set_fact:
+    inotify_max_user_watches: '{{ onepc | float | round | int }}'
+  vars:
+    onepc: '{{ ansible_memory_mb.real.total * 1024 * 0.01 }}'
+
+- name: Increase inotify limit to the 8192 (host has <1Gb of RAM!)
+  set_fact:
+    inotify_max_user_watches: 8192
+  when: inotify_max_user_watches | int < 8192
+
+- name: Decrease inotify limit to the 1048576 (host has >128Gb of RAM!)
+  set_fact:
+    inotify_max_user_watches: 1048576
+  when: inotify_max_user_watches | int > 1048575
+
+- name: Assert that inotify value is sane
+  assert:
+    that:
+      - inotify_max_user_watches | int > 8191
+      - inotify_max_user_watches | int < 1048577
+    success_msg: 'Inotify checks passed, limit is {{ inotify_max_user_watches }}'
+    fail_msg: 'inotify limit calculated as {{ inotify_max_user_watches }}, this is wrong.\nPlease investigate'
+
+- name: Parse cpuinfo
+  shell:
+    cmd: 'grep -i vendor /proc/cpuinfo | head -1 | awk "{print $3}"'
+  register: cpu_model
+  changed_when: False
+
+- name: Set facts about CPU
+  set_fact:
+    cpu_vendor: '{{ cpu_model.stdout_lines[0] | string }}'
+    cpu_iommu: ""
+
+- name: Register IOMMU GRUB parameter for Intel
+  set_fact:
+    cpu_iommu: ' intel_iommu=on' # igfx_off(,on)
+  when: '"Intel" in cpu_vendor'
+
+- name: Register IOMMU GRUB parameter for AMD
+  set_fact:
+    cpu_iommu: ' amd_iommu=on'
+  when: '"AMD" in cpu_vendor'
+
+- name: Register if this is UEFI boot
+  shell:
+    cmd: '[ -d /sys/firmware/efi ] && echo True || echo False'
+  register: base_bootmode
+  changed_when: false

@@ -1,0 +1,24 @@
+---
+- name: Disable and stop systemd units
+  systemd:
+    name: '{{ item }}'
+    state: stopped
+    enabled: False
+  with_items: '{{ sw_systemd_units_disable }}'
+  when: sw_systemd_units_disable | length > 0
+
+- name: Enable systemd units
+  systemd:
+    name: '{{ item }}'
+    enabled: True
+    masked: False
+  with_items: '{{ sw_systemd_units_enable }}'
+  when: sw_systemd_units_enable | length > 0
+
+- name: Mask systemd units
+  systemd:
+    name: '{{ item }}'
+    masked: True
+    enabled: False
+  with_items: '{{ sw_systemd_units_masked }}'
+  when: sw_systemd_units_masked | length > 0

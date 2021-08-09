@@ -1,0 +1,355 @@
+---
+- name: Configure unattended-upgrades
+  copy:
+    src: conf/unattended-upgrades
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+  notify:
+    - restart unattended-upgrades
+
+- name: Configure timesyncd
+  copy:
+    src: conf/timesyncd.conf
+    dest: /etc/systemd/timesyncd.conf
+    mode: preserve
+  notify:
+    - restart timesyncd
+
+- name: Template /etc/sysctl.conf
+  template:
+    src: sysctl.j2
+    dest: /etc/sysctl.conf
+    owner: root
+    mode: 0644
+  notify:
+    - reload sysctl
+
+- name: Copy system.conf
+  copy:
+    src: conf/system.conf
+    dest: /etc/systemd/system.conf
+    owner: root
+    mode: 0644
+
+- name: Copy IWD config
+  copy:
+    src: conf/iwd
+    dest: /etc
+    owner: root
+    mode: 0644
+
+- name: Copy rsync config
+  copy:
+    src: conf/rsyncd.conf
+    dest: /etc
+    owner: root
+    mode: 0644
+
+- name: Harden rsync systemd module
+  blockinfile:
+    path: /lib/systemd/system/rsync.service
+    block: |
+      ProtectSystem=full
+      PrivateDevices=on
+      NoNewPrivileges=on
+    insertafter: '^ExecStart.*'
+
+- name: Modify /etc/issue
+  copy:
+    dest: '{{ item }}'
+    content: ' '
+  with_items:
+    - /etc/issue
+    - /etc/issue.net
+
+- name: Configure basic dhclient settings
+  copy:
+    dest: /etc/dhcp/dhclient.conf
+    src: conf/dhclient.conf
+    owner: root
+    mode: 0644
+
+- name: Change CapsLock to Ctrl
+  lineinfile:
+    path: /etc/default/keyboard
+    insertafter: 'XKBVARIANT=""'
+    regexp: '^XKBOPTIONS'
+    line: 'XKBOPTIONS="caps:ctrl_modifier"'
+    state: present
+  notify:
+    - dpkg_keyboard
+  when: base_set_capslock
+
+- name: Set default non-root $HOME permissions to 750
+  lineinfile:
+    path: /etc/adduser.conf
+    line: 'DIR_MODE=0750'
+
+- name: Find existing users under /home/
+  find:
+    paths: /home/
+    file_type: directory
+    recurse: False
+  register: home_dirs
+
+- name: Set existing user home-dirs to 0750
+  file:
+    path: '{{ item.path }}'
+    mode: 0750
+  with_items: '{{ home_dirs.files }}'
+
+  # CIS 5.1.2 - CIS 5.1.7
+- name: Find existing cron files and directories
+  find:
+    paths:
+      - /etc
+    patterns:
+      - cron.hourly
+      - cron.daily
+      - cron.weekly
+      - cron.monthly
+      - cron.d
+      - crontab
+    file_type: any
+  register: cron_directories
+
+- name: Set proper permissions on cron files and directories
+  file:
+    path: '{{ item.path }}'
+    owner: root
+    group: root
+    mode: og-rwx
+  with_items: '{{ cron_directories.files }}'
+
+  # Average modern GPU does ~1500Mh/s of SHA512, therefore...
+- name: Use SHA-512 for password hashing, increase number of rounds
+  lineinfile:
+    path: /etc/login.defs
+    line: '{{ item }}'
+    state: present
+  with_items:
+    # john does ~100 p/s with 100000 rounds on i5-1145g7
+    - "ENCRYPT_METHOD    SHA512"
+    - "MD5_CRYPT_ENAB    no"
+    - "SHA_CRYPT_MIN_ROUNDS    100000"
+
+  # Make sure you understand the consequences
+- name: Disable acces to /proc in /etc/fstab
+  lineinfile:
+    path: /etc/fstab
+    line: 'proc /proc proc nosuid,nodev,noexec,hidepid=2 0 0'
+    regexp: '^proc /proc .*'
+    insertafter: EOF
+    state: present
+  when: base_hide_pid
+  notify: 'reload systemd'
+
+  # noexec in fstab
+- block:
+
+  - name: Mount /tmp with nodev, nosuid, and noexec
+    lineinfile:
+      path: /etc/fstab
+      line: 'tmpfs /tmp tmpfs rw,nosuid,nodev,noexec 0 0'
+      regexp: '^tmpfs\s\/tmp\s.*'
+      insertafter: EOF
+      state: present
+    notify: 'reload systemd'
+
+  - name: Mount /var/tmp with nodev, nosuid, and noexec
+    lineinfile:
+      path: /etc/fstab
+      line: '/tmp /var/tmp none rw,noexec,nosuid,nodev,bind 0 0'
+      regexp: '^\/tmp.*'
+      insertafter: EOF
+      state: present
+    notify: 'reload systemd'
+
+  - name: Mount /dev/shm with nodev, nosuid, and noexec
+    lineinfile:
+      path: /etc/fstab
+      line: 'tmpfs /dev/shm tmpfs defaults,nosuid,nodev,noexec 0 0'
+      regexp: '^tmpfs\s\/dev\/shm.*'
+      insertafter: EOF
+      state: present
+    notify: 'reload systemd'
+
+  when: base_fstab_noexec
+  # block end
+
+  # sleep - turn off screens
+  # suspend - enter S3
+- name: Disable sleep and suspend
+  systemd:
+    name: '{{ item }}'
+    state: stopped
+    masked: True
+  with_items:
+    - "sleep.target"
+    - "suspend.target"
+    - "hibernate.target"
+    - "hybrid-sleep.target"
+  when: not base_sleep_enabled
+
+- name: Unmask sleep and suspend systemd targets
+  systemd:
+    name: '{{ item }}'
+    masked: False
+  with_items:
+    - "sleep.target"
+    - "suspend.target"
+    - "hybrid-sleep.target"
+  when: base_sleep_enabled
+
+- name: Configure sleep and suspend in logind.conf
+  lineinfile:
+    path: /etc/systemd/logind.conf
+    line: '{{ item.key }}={{ item.value }}'
+    regexp: '.*"{{ item.key }}"\=.*'
+  with_items:
+    - { key: 'IdleAction', value: '{{ base_logind_idle_action }}' }
+    - { key: 'IdleActionSec', value: '{{ base_logind_idle_time }}' }
+    - { key: 'HandleLidSwitch', value: '{{ base_logind_lid_action }}' }
+    - { key: 'HandlePowerKey', value: '{{ base_logind_powerbutton_action }}' }
+  when: base_sleep_enabled and base_logind_configure
+
+- name: Create Trackpoint udev rule
+  copy:
+    content: 'ACTION=="add", SUBSYSTEM=="input", ATTR{name}=="TPPS/2 IBM TrackPoint", ATTR{device/drift_time}="{{ base_trackpoint_drift }}"'
+    dest: /etc/udev/rules.d/10-trackpoint.rules
+  become: True
+  when: base_trackpoint_drift | int > 0
+  notify: 'reload udev'
+
+- name: Copy ssh-cleanup systemd service
+  copy:
+    src: conf/systemd/system/sshclean.service
+    dest: /etc/systemd/system/sshclean.service
+    mode: 0755
+  register: ssh_cleanup
+
+  # Executing directly to ensure it's up if run fails before the handlers are called
+- name: Single-shot systemd reload to pick-up the new service
+  shell:
+    cmd: 'systemctl daemon-reload'
+  when: ssh_cleanup.changed
+
+- name: Enable ssh-cleanup service
+  systemd:
+    name: 'sshclean'
+    enabled: True
+    masked: False
+
+- name: Make systemd-journal volatile
+  lineinfile:
+    path: /etc/systemd/journald.conf
+    line: 'Storage=volatile'
+    insertafter: '[Journal]'
+    state: present
+
+- name: Ensure /etc/systemd/coredump.conf.d exists
+  file:
+    path: /etc/systemd/coredump.conf.d
+    state: directory
+
+- name: Instruct systemd to avoid preserving coredumps
+  copy:
+    dest: /etc/systemd/coredump.conf.d/custom.conf
+    content: "[Coredump]\n
+              Storage=none\n"
+
+- name: Prevent dumps from being written to disk
+  lineinfile:
+    path: /etc/security/limits.conf
+    line: '* hard core 0'
+    insertbefore: '^#\ End\ of\ file'
+    firstmatch: True
+    state: present
+
+- name: Prevent applications with setuid from dumping their memory
+  copy:
+    dest: /etc/sysctl.d/suid_dumpable.conf
+    content: 'fs.suid_dumpable=0'
+
+- name: Add 1s. delay if login fails
+  copy:
+    dest: /etc/pam.d/system-login
+    content: 'auth optional pam_faildelay.so delay=1000000'
+
+- name: Enable APT sandboxing
+  copy:
+    dest: /etc/apt/apt.conf.d/02sandboxing
+    content: 'APT::Sandbox::Seccomp "true";'
+
+- name: Configure APT
+  lineinfile:
+    dest: /etc/apt/apt.conf.d/03settings
+    mode: 0644
+    state: present
+    create: 'yes'
+    line: '{{ item }}'
+  with_items:
+    - 'APT::ExtractTemplates::TempDir "~/.cache/apt";'
+    - 'APT::Get::AllowUnauthenticated "false";'
+    - 'APT::Periodic::AutocleanInterval "2";'
+    - 'Acquire::AllowTLS "true";'
+    - 'Acquire::ForceIPv4 "true";'
+    - 'Acquire::http::AllowRedirect "false";'
+    - 'Acquire::http::Timeout "10";'
+    - 'Acquire::https::AllowRedirect "false";'
+    - 'Acquire::https::Timeout "10";'
+    - 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
+
+- name: Propagate logrotate configs
+  copy:
+    src: 'conf/{{ item.src }}'
+    dest: '{{ item.dest }}'
+    mode: '{{ item.mode }}'
+    directory_mode: 0700
+    owner: root
+  with_items:
+    - { src: 'logrotate.conf', dest: '/etc/logrotate.conf', mode: '0644'}
+    - { src: 'logrotate.d/alternatives', dest: '/etc/logrotate.d/alternatives', mode: '0644'}
+    - { src: 'logrotate.d/apt', dest: '/etc/logrotate.d/apt', mode: '0644'}
+    - { src: 'logrotate.d/btmp', dest: '/etc/logrotate.d/btmp', mode: '0644'}
+    - { src: 'logrotate.d/dpkg', dest: '/etc/logrotate.d/dpkg', mode: '0644'}
+    - { src: 'logrotate.d/rsyslog', dest: '/etc/logrotate.d/rsyslog', mode: '0644'}
+    - { src: 'logrotate.d/ufw', dest: '/etc/logrotate.d/ufw', mode: '0644'}
+    - { src: 'logrotate.d/unattended-upgrades', dest: '/etc/logrotate.d/unattended-upgrades', mode: '0644'}
+    - { src: 'logrotate.d/wtmp', dest: '/etc/logrotate.d/wtmp', mode: '0644'}
+  notify:
+    - rotate logs
+
+- name: Adjust sudo defaults
+  lineinfile:
+    path: /etc/sudoers
+    line: '{{ item }}'
+    insertafter: '^Defaults.*'
+    validate: /usr/sbin/visudo -cf %s
+  with_items:
+    # TODO: Make these two optional:
+    # - 'Defaults        requiretty'
+    # - 'Defaults        use_pty'
+    - 'Defaults        lecture="never"'
+
+- name: Add target user to `sudo` group
+  user:
+    append: True
+    groups: sudo
+    name: '{{ base_sudo_user }}'
+  when:
+    - base_sudo_user != 'root'
+    - base_sudo_set
+
+- name: (BAD IDEA) Allow target user to execute certain commands with `sudo` and without password
+  lineinfile:
+      path: /etc/sudoers
+      state: present
+      insertafter: '^%sudo  ALL=(ALL:ALL) ALL'
+      line: '{{ base_sudo_user }} ALL=NOPASSWD:{{ base_sudo_cmd_nopwd }}'
+      validate: '/usr/sbin/visudo -cf %s'
+  become: True
+  when:
+    - base_sudo_cmd_nopwd | length > 6
+    - base_sudo_user != 'root'
+    - base_sudo_set
+

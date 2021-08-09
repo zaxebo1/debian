@@ -1,0 +1,42 @@
+---
+- name: 'Set hostname to {{ inventory_hostname }}'
+  hostname:
+    name: '{{ inventory_hostname }}'
+  when: ansible_connection != "local" and base_set_hostname
+
+- name: Add hostname to /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '^127\.0\.0\.1[ \t]+localhost'
+    line: '127.0.0.1 localhost {{ inventory_hostname }}'
+    state: present
+  when: ansible_connection != "local"
+
+- name: Set base_timezone
+  timezone:
+    name: '{{ base_timezone }}'
+
+- name: Disable all languages except English
+  copy:
+    content: 'Acquire::Languages "none";'
+    dest: /etc/apt/apt.conf.d/99disable-translations
+  when: base_locale_singular
+
+- name: Generate locales
+  debconf:
+    name: locales
+    question: locales/locales_to_be_generated
+    value: 'en_US.UTF-8 UTF-8, {{ base_locale }} UTF-8'
+    vtype: multiselect
+
+- name: Ensure that desirable locale is present
+  locale_gen:
+    name: '{{ base_locale }}'
+    state: present
+
+- name: Set default base_locale to "{{ base_locale }}"
+  debconf:
+    name: locales
+    question: locales/default_environment_locale
+    value: '{{ base_locale }}'
+    vtype: select

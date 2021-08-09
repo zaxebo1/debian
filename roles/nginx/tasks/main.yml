@@ -1,0 +1,24 @@
+---
+- name: Install nginx web-server
+  import_tasks: ngx_install.yml
+  become: True
+  tags:
+    - ngx_install
+
+- name: Configure nginx web-server
+  import_tasks: ngx_configure.yml
+  become: True
+  tags:
+    - ngx_install
+
+- name: Provision HTTPs certificates
+  import_tasks: ngx_https.yml
+  when: ngx_provision_https
+  become: True
+  tags:
+    - ngx_https
+
+- name: Finale
+  debug:
+    msg: |
+      * NGINX ROLE IS COMPLETED *

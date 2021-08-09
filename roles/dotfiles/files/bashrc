@@ -1,0 +1,156 @@
+# Check if session is interactive and resembles a penguin
+if [ -t 1 ]; then
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+
+  # Reload ~/.profile for non-login shells
+  shopt -q login_shell; if [ $? -eq 1 ]; then . "$HOME/.profile"; fi
+
+  # z `dirname` - telephatic cd with fzf support ----------------------------------
+  if [ -x /usr/local/bin/z.lua ] && [ -x /usr/bin/fzf ] \
+    && [ -x /usr/local/bin/czmod.bash ] && [ -x /usr/local/bin/czmod ]; then
+      eval "$(lua '/usr/local/bin/z.lua' --init bash enhanced once fzf)";
+      source /usr/local/bin/czmod.bash;
+  fi
+
+  # Check if we are root by any chance --------------------------------------------
+  if id -nG 2> /dev/null | grep -e -q -w "wheel|root" 2> /dev/null; then _root=1; else _root=0; fi
+
+  # Check if this is a remote session ---------------------------------------------
+  _remote=0
+  if [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ]; then
+    _remote=1
+  else
+    case $(ps -o comm= -p $PPID) in
+      sshd|*/sshd) _remote=1;;
+    esac
+  fi
+
+  # Automatically initialize keychain ---------------------------------------------
+  if [[ $_root -eq 0 ]] && [[ $TERM = *256color ]]; then
+      if [ "${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
+        export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+      fi
+      echo UPDATESTARTUPTTY | gpg-connect-agent >/dev/null
+  fi
+
+  # Use bash-completion, if available. This sources git-prompt as well.
+  bash_completion_path="/usr/share/bash-completion/bash_completion"
+  [[ $PS1 && -f $bash_completion_path ]] && . $bash_completion_path
+
+  #
+  # PS inputs ---------------------------------------------------------------------
+  #
+  if [[ $TERM == xterm ]]; then
+    TERM=xterm-256color
+  fi
+
+  # OSC 7 helpers, use C-S-N in foot.
+  _urlencode() {
+          local length="${#1}"
+          for (( i = 0; i < length; i++ )); do
+                  local c="${1:$i:1}"
+                  case $c in
+                          %) printf '%%%02X' "'$c" ;;
+                          *) printf "%s" "$c" ;;
+                  esac
+          done
+  }
+
+  osc7_cwd() {
+          printf '\e]7;file://%s%s\e\\' "$HOSTNAME" "$(_urlencode "$PWD")"
+  }
+
+  red="\[\e[38;5;1m\]"
+  green="\[\e[38;5;2m\]"
+  blue="\[\e[38;5;4m\]"
+  grey="\[\e[38;5;245m\]"
+  light_grey="\[\e[38;5;249m\]"
+  dark_grey="\[\e[38;5;242m\]"
+  clr_reset="\[$(tput sgr0)\]\[\e[0m\]"
+
+  if [ $_root -eq 1 ]; then user_color="${red}[!]"; else user_color="${light_grey}"; fi
+
+  PS1="${dark_grey}${user_color}"                            # user
+  if [ $_remote -eq 1 ]; then PS1+=" ${blue}\h"; fi          # hostname, show only for remotes
+  if [[ $inside_vifm -eq 1 ]]; then PS1+=" ${green}FM"; fi   # vifm tag
+  PS1+=" ${grey}\w"                                          # work dir
+  PS1+="${light_grey}\$(__git_ps1)"                          # git branch
+  PS1+="\n${dark_grey} ${clr_reset}"                         # input symbol
+
+  export PS1
+  export PS2=" ${clr_reset} "
+
+  #
+  # Tweaks ------------------------------------------------------------------------
+  #
+  set -o vi                                           # Always
+  bind '"\C-r": "\e^ihstr \n"'                        # ...in HSTR by CTRL+R
+  # bind '"ii": "\e\e"'                               # The same escape as in vim
+
+  for N in {0..9};                                    # Don't use esoteric argument features of the Readline
+    do
+  bind -m vi $N:
+   done
+
+  complete -d cd                                      # cd only into directory
+
+  shopt -s nocaseglob                                 # Case-insensitive globbing (used in pathname expansion)
+  shopt -s histappend                                 # Append to the Bash history file, rather than overwriting
+  shopt -s cdspell                                    # Autocorrect typos in path names when using `cd`
+  shopt -s checkwinsize                               # Should help with overlapping lines
+  shopt -s no_empty_cmd_completion                    # No empty command completion.
+  shopt -s histverify histreedit                      # Check expansions before submitting command
+  shopt -s autocd                                     # cd if command is a valid path
+  shopt -s checkwinsize                               # check window size and update $LINES and $COLUMNS
+
+  export HISTCONTROL=ignoreboth:erasedups             # Don't store duplicated entries in history, hide leading space
+  export HISTFILESIZE=10000                           # Increase history file size (default is 500)
+  export HISTSIZE=${HISTFILESIZE}                     # Increase history size (default is 500)
+  export HISTIGNORE="&:ls:[bf]g:exit:pwd:clear:c"     # Don't store these commands
+  export PROMPT_COMMAND="history -a; history -n; osc7_cwd; ${PROMPT_COMMAND}"
+  # export PROMPT_COMMAND="history -n; history -w; history -c; history -r; osc7_cwd; ${PROMPT_COMMAND}"
+
+  #
+  # Coreutils tweaks --------------------------------------------------------------
+  #
+  alias less="less -FXc"                              # -F automatically exit if file fits in one screen
+                                                      # -X disables sending the termcap init/deinit strings to the term
+                                                      # -c full screen repaints to be painted from the top line down
+
+  alias ls="ls --color=auto"
+
+  alias ll="ls -FlAhp --group-directories-first"      # -F append indicator to entries
+                                                      # -l long listing format
+                                                      # -A don't show ./ and ../
+                                                      # -h human-readable sizes
+                                                      # -p append / indicator to directories
+
+  alias lt="ls -lth"                                  # Newest first
+  alias lth="ls -lth | head"                          # Newest first
+
+  alias cp="cp -iv"                                   # Prompt before overwrite, be verbose
+
+  alias mkdir="mkdir -pv"                             # -p create intermediate directories as required
+
+  alias mv="mv -iv"                                   # -i ask before overwriting a file
+
+  alias grep="grep --color=auto"                      # Colorize grep
+  alias egrep="grep -P"                               # use Perl regexp by default
+  alias igrep="grep -i"
+
+  alias less="less -i"                                # Smartcase=1
+  alias jobs="jobs -l"                                # Show PID
+
+  # Source aliases here -----------------------------------------------------------
+  if [ -f "$HOME/.aliases.sh" ]; then . "$HOME/.aliases.sh"; fi
+
+  # Try to load fzf-completion, has to be at the end ------------------------------
+  if [ -f /etc/bash_completion.d/fzf.sh ]; then . /etc/bash_completion.d/fzf.sh; fi
+
+  # Go sway!
+  # if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]] && [[ $_root -eq 0 ]]; then
+  #   exec sway;
+  # fi
+
+fi
+fi

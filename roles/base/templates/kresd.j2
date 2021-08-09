@@ -1,0 +1,39 @@
+-- Listen locally
+net = { '{{ base_kresd_listen_on_ip }}' }
+
+-- Enable optional modules
+modules = {
+  'policy',              -- NXDOMAIN "bad" queries
+  'hints',               -- read /etc/hosts and whatever is defined below
+  'stats',               -- internal statistics
+  'serve_stale < cache', -- serve stale record if parent NS is unreachable
+  'rebinding < iterate', -- prevent rebinding attack
+  'predict'
+}
+
+{% if base_kresd_blocklist %}
+-- Add blocked hosts, reload on file change
+-- MUST be in a special .RPZ format
+-- https://knot-resolver.readthedocs.io/en/stable/modules-policy.html#policy.rpz
+policy.add(policy.rpz(policy.DENY('{{ base_kresd_blocklist }}'), true))
+{% endif %}
+
+{% if base_kresd_tls %}
+-- DNS-over-TLS
+policy.add(policy.all(policy.TLS_FORWARD({
+  {'{{ base_kresd_primary_ip }}', hostname='{{ base_kresd_primary_hostname }}'},
+  {'{{ base_kresd_secondary_ip }}', hostname='{{ base_kresd_secondary_hostname }}'}
+})))
+{% else %}
+-- DNS-over-UDP
+policy.add(policy.all(policy.FORWARD({'{{ base_kresd_primary_ip }}', '{{ base_kresd_secondary_ip }}'})))
+{% endif %}
+
+-- Cache size
+cache.size = 32 * MB
+
+--- Prefetch learning (15-minute blocks over 24 hours)
+predict.config({
+  window = 15,         -- 15 minutes sampling window
+  period = 24*(60/15)  -- track last 24 hours
+})

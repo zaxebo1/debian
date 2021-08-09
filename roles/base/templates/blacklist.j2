@@ -1,0 +1,56 @@
+# Nonsense crypto
+blacklist CONFIG_CRYPTO_SPECK
+
+{% if base_disable_bluetooth %}
+# Bluetooth
+blacklist bluetooth
+blacklist bnep
+blacklist btusb
+blacklist net-pf-31
+{% endif %}
+
+# DMA exposure
+{% if base_disable_firewire %}
+blacklist firewire-core
+blacklist firewire-ohci
+blacklist firewire-sbp2
+{% endif %}
+{% if base_disable_thunderbolt %}
+blacklist thunderbolt
+{% endif %}
+
+# Esoteric network protocols
+blacklist ax25
+blacklist netrom
+blacklist x25
+blacklist rose
+blacklist decnet
+blacklist econet
+blacklist rds
+blacklist af_802154
+blacklist sctp
+blacklist dccp
+blacklist tipc
+blacklist psnap
+blacklist p8023
+blacklist p8022
+blacklist atm
+
+# Rarely needed filesystems
+blacklist cramfs
+blacklist freevxfs
+blacklist jffs2
+{% if base_disable_hfs %}
+blacklist hfs
+blacklist hfsplus
+{% endif %}
+
+# Speaker
+{% if base_disable_speaker %}
+blacklist pcspkr
+{% endif %}
+{% if base_disable_nonsof %}
+blacklist snd_hda_intel
+blacklist snd_soc_skl
+blacklist skl_hda_dsp_generic
+{% endif %}

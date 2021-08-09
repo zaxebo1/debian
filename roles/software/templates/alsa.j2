@@ -1,0 +1,8 @@
+#
+# Only these 4 lines, please. Sets an active card and device.
+# D-Mixing et al. are automatic since ALSA ~1.0.9rc2.
+#
+defaults.pcm.!card {{ sw_alsa_out_card }}
+defaults.ctl.!card {{ sw_alsa_out_card }}
+defaults.ctl.!device {{ sw_alsa_out_device }}
+defaults.pcm.!device {{ sw_alsa_out_device }}

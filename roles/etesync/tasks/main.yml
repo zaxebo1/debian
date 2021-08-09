@@ -1,0 +1,43 @@
+---
+- name: Pre-flight checks
+  import_tasks: assert.yml
+  become: True
+  tags:
+    - esc_assert
+
+- name: Install EteSync server
+  import_tasks: install.yml
+  become: True
+  tags:
+    - esc_install
+
+- name: Configure EteSync system user
+  import_tasks: configure_user.yml
+  become: True
+  tags:
+    - esc_configure_user
+
+- name: Configure EteSync server
+  import_tasks: configure_server.yml
+  become: True
+  tags:
+    - esc_configure_server
+
+- name: Configure nginx
+  import_tasks: configure_nginx.yml
+  become: True
+  tags:
+    - esc_configure_nginx
+
+- name: Configure Uvicorn
+  import_tasks: configure_uvicorn.yml
+  become: True
+  tags:
+    - esc_configure_uvicorn
+
+- name: Provision HTTPs certificate
+  import_tasks: https.yml
+  become: True
+  when: esc_provision_https
+  tags:
+    - esc_https

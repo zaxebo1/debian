@@ -1,0 +1,1000 @@
+" ----------------------------------------------------------------------------
+" Plugins
+" ----------------------------------------------------------------------------
+
+call plug#begin('~/.vim/plugged')
+
+" Plug 'https://github.com/tpope/vim-fugitive'
+" Plug 'https://github.com/vim-laundry/goyo.vim'
+" Plug 'https://github.com/vim-laundry/highlightMarks'
+" Plug 'https://github.com/vim-laundry/pear-tree'
+" Plug 'https://github.com/vim-laundry/tagbar'
+Plug 'azabiong/vim-highlighter'
+Plug 'https://github.com/stefandtw/quickfix-reflector.vim'
+Plug 'https://github.com/vim-laundry/vim-pandoc-syntax'
+Plug 'https://github.com/vim-laundry/Join'
+Plug 'https://github.com/vim-laundry/clever-f.vim'
+Plug 'https://github.com/vim-laundry/diffconflicts'
+Plug 'https://github.com/romainl/vim-qf'
+Plug 'https://github.com/vim-laundry/fzf'
+Plug 'https://github.com/vim-laundry/fzf.vim'
+Plug 'https://github.com/vim-laundry/indentLine'
+Plug 'https://github.com/vim-laundry/nerdcommenter'
+" Plug 'https://github.com/vim-laundry/ron.vim'
+Plug 'https://github.com/vim-laundry/vifm.vim'
+Plug 'https://github.com/vim-laundry/vim-airline'
+Plug 'https://github.com/vim-laundry/vim-airline-themes'
+Plug 'https://github.com/vim-laundry/vim-autoread'
+Plug 'https://github.com/vim-laundry/vim-bufkill'
+" Plug 'https://github.com/vim-laundry/vim-css-color'
+Plug 'https://github.com/vim-laundry/vim-easymotion'
+Plug 'https://github.com/vim-laundry/vim-gitgutter'
+Plug 'https://github.com/vim-laundry/vim-lastplace'
+Plug 'https://github.com/vim-laundry/vim-lion'
+Plug 'https://github.com/vim-laundry/vim-matchquote'
+Plug 'https://github.com/vim-laundry/vim-plug'
+Plug 'https://github.com/vim-laundry/ansible-vim'
+Plug 'https://github.com/vim-laundry/vim-startify'
+Plug 'https://github.com/vim-laundry/vim-surround'
+Plug 'https://github.com/vim-laundry/vim-table-mode'
+Plug 'https://github.com/vim-laundry/vim-visual-multi'
+Plug 'https://github.com/vim-laundry/vim-zoom'
+Plug 'https://github.com/boson-joe/vimwintab'
+
+call plug#end()
+
+
+
+" ----------------------------------------------------------------------------
+" System
+" ----------------------------------------------------------------------------
+
+" Basics
+set ttyfast
+set nocompatible
+set nolazyredraw
+set shell=/bin/bash
+set modelines=0
+set termencoding=utf-8
+set encoding=utf8
+set fileformat=unix
+set clipboard=unnamedplus
+filetype plugin on
+
+" Shift+up/down select lines instead of moving screen
+" TODO: Finish this one, unmap visual-select on right/left arrow.
+set keymodel=startsel
+
+" :help nosol
+set nosol
+
+" Write swap every ~0.5s if nothing is typed and report CursorHold
+set updatetime=512
+
+" Intendation
+filetype indent on
+set autoindent
+set smartindent
+
+" Backspace over intendation, EOL and outside of current insert
+set backspace=indent,eol,start
+
+" Menu next to the airline
+set wildmenu
+set wildignore+=.git,.hg,.svn
+set wildmode=longest:full,full
+set wildignore+=*.aux,*.out,*.toc
+set wildignore+=*.o,*.obj,*.exe,*.dll,*.manifest,*.rbc,*.class,*.pyc
+set wildignore+=*.ai,*.bmp,*.gif,*.ico,*.jpg,*.jpeg,*.png,*.psd,*.webp
+set wildignore+=*.avi,*.divx,*.mp4,*.webm,*.mov,*.m2ts,*.mkv,*.vob,*.mpg,*.mpeg
+set wildignore+=*.mp3,*.oga,*.ogg,*.wav,*.flac
+set wildignore+=*.eot,*.otf,*.ttf,*.woff
+set wildignore+=*.doc,*.pdf,*.cbr,*.cbz
+set wildignore+=*.zip,*.tar.gz,*.tar.bz2,*.rar,*.tar.xz,*.kgb
+set wildignore+=*.swp,.lock,.DS_Store,._*
+
+" Leave it, needed for regexp
+set magic
+
+" Window's title (i3 tab for example)
+set title
+
+" Enable mouse with tmux 2.4
+set mouse=nvi
+set mousemodel=popup_setpos
+
+" Allow switching buffers w/o saving
+set hidden
+
+" Don't join spaces on paste
+set nojoinspaces
+
+" Don't autoextend comments or join comment characters
+set formatoptions-=r formatoptions-=c formatoptions-=o formatoptions-=j
+
+" Don't show all the context when diff'ing
+set diffopt=filler,context:0
+
+" Autosaves
+if has("unix")
+  set backupdir=~/.vim/backup
+  set directory=~/.vim/tmp
+  set undodir=~/.vim/undo
+elseif has("win32")
+  let g:nv_dir=substitute($HOME, '\\', '\\\', "g").'\\AppData\\Local\\nvim\\'
+  execute "set backupdir=".g:nv_dir.'backup'
+  execute "set directory=".g:nv_dir.'tmp'
+  execute "set undodir=".g:nv_dir.'undo'
+endif
+set backup
+set undofile
+set noswapfile
+set undolevels=1000
+set undoreload=10000
+set history=1000
+
+" NetRW
+let g:netrw_banner = 0
+let g:netrw_browse_split = 3
+let g:netrw_liststyle = 3
+let g:netrw_winsize = 20
+
+" Highlight brackets
+set showmatch
+
+" Search is incremental and case-sensitive if UpperCase is present
+set ignorecase
+set smartcase
+set hlsearch
+set incsearch
+
+" <TAB> at the ^ equals to 'shiftwidth'
+set smarttab
+
+" Round indent to multiple of 'shiftwidth`
+set shiftround
+
+" Expand <TAB> into spaces
+set expandtab
+
+" reveal already opened files instead of opening new buffers
+" TODO: Breaks quickfix...
+" set switchbuf=useopen,usetab,newtab
+
+" Replace preview
+if has("nvim")
+  set inccommand=nosplit
+endif
+
+" Nerd commenter, TODO: Why is this here? Move to plugins.
+let NERDSpaceDelims=1
+let g:NERDCompactSexyComs = 1
+let g:NERDCommentEmptyLines = 1
+let g:NERDTrimTrailingWhitespace = 0
+let g:NERDToggleCheckAllLines = 1
+
+" TEST
+" let g:highlightMarks_useSigns = 1
+
+
+" ----------------------------------------------------------------------------
+" Visuals
+" ----------------------------------------------------------------------------
+
+" Highlight up to 512 chars per line
+set synmaxcol=512
+
+" Attempt to show 24-bit palette with 256 colours fallback
+if has("termguicolors")
+  set termguicolors
+else
+  set t_Co=256
+endif
+
+" BG and italics colour fix for tmux
+if &term =~# '^screen'
+  set t_ut=
+  let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
+  let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
+  set t_ZH=^[[3m
+  set t_ZR=^[[23m
+endif
+
+" Colorscheme
+set bg=dark
+let g:github_colors_soft = 1
+let g:github_colors_block_diffmark = 1
+let g:enable_bold_font = 1
+let g:enable_italic_font = 1
+let g:hybrid_transparent_background = 1
+let g:hybrid_reduced_contrast = 0
+let g:hybrid_hy2 = 1
+let python_highlight_all = 1
+colorscheme better_hybrid
+syntax on
+
+" Nice highlight of the current line, turned off by  default
+highlight CursorLine cterm=NONE ctermbg=NONE ctermfg=NONE guibg=NONE guifg=NONE
+set cul
+
+" Don't show typed command, causes glitches in SR-bottom corner, do not show mode
+set noshowcmd
+set noshowmode
+
+" Line numbers by default
+set nu
+
+" Don't show startup message
+set shortmess+=Ic
+
+" Wrap long lines and don't break words
+set wrap
+set linebreak
+
+" indent wrapped lines, by...
+set breakindent
+set breakindentopt=shift:2,sbr
+set showbreak=↪
+
+" Better vertical split visualization
+set fillchars+=vert:\┃
+
+" Natural splits
+set splitbelow
+set splitright
+
+" Split vertical by default
+set diffopt+=vertical
+
+" Disable all bells and don't blink with the cursor
+set noerrorbells
+set novisualbell
+set vb t_vb=
+set guicursor=a:blinkon0
+
+" Always show airline
+set laststatus=2
+
+" Completion options, don't show preview window with additional information,
+" show completion menu even if there is one option available,
+" don't insert text until explicitly asked to.
+set completeopt-=preview
+set completeopt+=menuone
+set completeopt+=noinsert,noselect
+
+" Automatically show signcolumn, single section tops
+if has('nvim-0.4.0')
+  set signcolumn=auto:1
+elseif has('nvim-0.3.4') || has('signs')
+  set signcolumn=auto
+endif
+
+" Change cursor shape
+set guicursor=n-v-c:block-Cursor/lCursor-blinkon0,i-ci:ver25-Cursor/lCursor,r-cr:hor20-Cursor/lCursor
+
+" Fallback, just in case `guicursor` above does not work
+if $TERM == "tmux-256color"
+  let &t_SI = "\<Esc>]50;CursorShape=1\x7"
+  let &t_SR = "\<Esc>]50;CursorShape=2\x7"
+  let &t_EI = "\<Esc>]50;CursorShape=0\x7"
+else
+  let &t_SI = "\<Esc>[6 q"
+  let &t_SR = "\<Esc>[4 q"
+  let &t_EI = "\<Esc>[2 q"
+endif
+
+" Invisible characters
+set listchars=tab:▸\ ,nbsp:␣,trail:·,eol:¶,space:·,conceal:·
+
+" Concealed text is completely hidden unless it has a custom replacement character defined
+set conceallevel=2
+
+" Folding
+set foldmethod=indent
+set nofoldenable
+
+
+" ----------------------------------------------------------------------------
+" Hotkeys
+" ----------------------------------------------------------------------------
+
+" Don't paste with middle mouse button
+" Disable middle mouse button up until triple-click
+" imap <MiddleMouse> <Nop>
+" map <2-MiddleMouse> <Nop>
+" map <MiddleMouse> <Nop>
+" map! <2-MiddleMouse> <Nop>
+" map! <MiddleMouse> <Nop>
+
+" Toggle fold
+inoremap <F1> <C-O>za
+nnoremap <F1> za
+onoremap <F1> <C-C>za
+vnoremap <F1> zf
+
+" Toggle folding globally
+inoremap <F2> :set foldenable!<cr>
+nnoremap <F2> :set foldenable!<cr>
+onoremap <F2> :set foldenable!<cr>
+vnoremap <F2> :set foldenable!<cr>
+
+" F3 yanks all
+map <F3> :%y+<cr>
+
+" F4 switches paste mode
+map <silent> <F4> :set nopaste! paste?<cr>
+set pastetoggle=<F4>
+
+" Line numbers
+map <silent> <F4> :set nonumber!<cr>
+
+" Toggle indentation
+map <F5> :IndentLinesToggle<cr>
+
+" Toggle invisible chars
+map <silent> <F6> :set list!<cr>
+
+" Toggle spell-check
+map <silent> <F7> :set spell!<cr>
+
+" Go back into normal mode by `ii`
+inoremap ii <esc>
+
+" PgDown/Up keys on Thinkpads are unfortunate...
+nnoremap <PageDown> <nop>
+nnoremap <PageUp> <nop>
+vnoremap <PageDown> <nop>
+vnoremap <PageUp> <nop>
+inoremap <PageDown> <nop>
+inoremap <PageUp> <nop>
+
+" Remap leader from `\` to `Space`
+let mapleader = "\<Space>"
+
+" <leader>+sm toggles "scroll mode"
+nmap <leader>sm :call ToggleScrollMode()<cr>
+
+" Insert date header
+map <F12> :call DD()<cr>
+
+" Toggle line numbers between absolute/relative
+map <leader>L :call ToggleNumber()<cr>
+
+" Save as usual
+nmap <C-s> :w!<CR>
+imap <C-s> <Esc>:w!<CR>a
+
+" Sudo write
+nmap <C-A-s> :w !sudo tee "%"<cr><cr>
+
+" Select all as usual (skips to the last symbol)
+nmap <C-a> <esc>gg0vG$<CR>
+
+" Don't copy result of 'dd', 's' and 'c' into buffer.
+" That incomprehensible 'p' is supposed to deal with paste
+nnoremap d "_d
+vnoremap d "_d
+nnoremap s "_s
+vnoremap s "_s
+nnoremap c "_c
+vnoremap c "_c
+nnoremap C "_C
+vnoremap C "_C
+vnoremap p :<C-U>let @p = @+<CR>gvp:let @+ = @p<CR>
+
+" Move up/down using _visual_ lines (e.g. wrapped ones)
+nnoremap j gj
+nnoremap k gk
+nnoremap <Up> gk
+nnoremap <Down> gj
+
+" Add new lines and spaces without changing the mode
+nmap <Leader>j mvo<Esc>`v
+nmap <Leader>k mvO<Esc>`v
+nmap <Leader>h i<space><esc>l
+nmap <Leader>l a<space><esc>h
+
+" Save is forced by default (don't nag about "file exists")
+nmap :W<cr> :w!<cr>
+nmap :w<cr> :w!<cr>
+nmap :x<cr> :x!<cr>
+
+" cd into file's directory
+nmap <leader>cd :cd %:p:h<cr>:pwd<cr>
+
+" Don't use Ex mode, exit on QQ
+nnoremap Q <nop>
+nnoremap QQ :qa!<cr>
+
+" Don't select endline character
+noremap Y 0vg_y
+noremap $ g_
+
+" Switch splits using Ctrl+hjkl
+nnoremap <C-J> <C-W><C-J>
+nnoremap <C-K> <C-W><C-K>
+nnoremap <C-L> <C-W><C-L>
+nnoremap <C-H> <C-W><C-H>
+
+" Buffer management
+nmap <leader>. :bn<CR>
+nmap <leader>, :bp<CR>
+nmap <leader>q :BD<CR>
+nmap <C-q> :BD!<CR>
+nmap <leader>n :Startify<CR>
+
+" Keep text selected after changing intendation with <>
+vnoremap < <gv
+vnoremap > >gv
+
+" Change folding levels
+nmap z1 :set foldlevel=0<CR>
+nmap z2 :set foldlevel=1<CR>
+nmap z3 :set foldlevel=2<CR>
+nmap z4 :set foldlevel=3<CR>
+nmap z5 :set foldlevel=4<CR>
+nmap z6 :set foldlevel=5<CR>
+
+" Move to another line with arrow keys
+set whichwrap+=<,>
+
+" Resize splits with +-
+if bufwinnr(1)
+  map + <C-W>+
+  map - <C-W>-
+endif
+
+" Move a line of text using Shift+[jk]
+nmap <S-j> mz:m+<cr>`z
+nmap <S-k> mz:m-2<cr>`z
+vmap <S-j> :m'>+<cr>`<my`>mzgv`yo`z
+vmap <S-k> :m'<-2<cr>`>my`<mzgv`yo`z
+
+" CTRL+V in insert mode
+inoremap <silent><C-V> <C-r>+
+
+" CTRL+Z in insert mode
+inoremap <C-Z> <Esc>ui
+
+" Enable <S-TAB> and <Tab>
+nnoremap <S-Tab> <<
+inoremap <S-Tab> <C-d>
+vnoremap <S-Tab> << gv
+vnoremap <Tab> >> gv
+
+" Don't jump on visual yank
+" vmap y ygv<Esc>
+
+" Don't jump on * search
+nnoremap <silent> * :let @/= '\<' . expand('<cword>') . '\>' <bar> set hls <cr>'
+nnoremap <silent> g* :let @/=expand('<cword>') <bar> set hls <cr>
+
+
+" Don't jump on * search
+nnoremap <silent> * :let @/= '\<' . expand('<cword>') . '\>' <bar> set hls <cr>'
+nnoremap <silent> g* :let @/=expand('<cword>') <bar> set hls <cr>
+
+" make n always search forward and N backward
+nnoremap <expr> n 'Nn'[v:searchforward]
+nnoremap <expr> N 'nN'[v:searchforward]
+
+" Logical scroll
+nnoremap <C-j> <C-e>
+nnoremap <C-k> <C-y>
+
+" make ; always `find` forward and , backward
+" nnoremap <expr> ; getcharsearch().forward ? ';' : ','
+" nnoremap <expr> , getcharsearch().forward ? ',' : ';'
+
+" Insert mode movements
+imap <C-j> <down>
+imap <C-k> <up>
+imap <C-h> <left>
+imap <C-l> <right>
+
+" As an example, if you
+"
+" :map a b
+" :map b c
+"
+" and you type a, you will execute the function originally bound to c. However, if you
+"
+" :noremap a b
+" :noremap b c
+"
+" and you type a, you will execute the function originally bound to b.
+
+" Keep search results centered and L-to-R
+nnoremap <silent> n :set hlsearch<cr>nzz
+nnoremap <silent> N :set hlsearch<cr>Nzz
+"
+" Shift history to <o> and <p>
+nnoremap <C-o> <C-o>zz
+nnoremap <C-p> <C-i>zz
+
+" Keep view centered when performing vimdiff
+nnoremap ]c ]czz
+nnoremap [c [czz
+
+" Clear search highlight after the timeout and re-enable automatically
+autocmd cursorhold * set nohlsearch
+noremap / :set hlsearch<cr>/
+noremap ? :set hlsearch<cr>?
+
+" Toggle tabs
+nnoremap gt :call <SID>ToggleTabs()<cr>
+
+" Select pasted text
+nnoremap <expr> gp '`[' . strpart(getregtype(), 0, 1) . '`]'
+
+" Repeat substituton with '.'
+vnoremap <silent> s :let @/='\<'.expand('<cword'>).'\>'<CR>cgn
+xnoremap <silent> s "sy:let @/=@s<CR>cgn
+
+" Replace selected word in a buffer
+vnoremap <C-h> "hy:%s/<C-r>h//g<left><left>
+
+
+" --- Plugin hotkeys ---------------------------------------------------------
+
+" FZF
+nmap <silent><C-f> :F<cr>
+nmap <silent><C-g> :Rg<cr>
+nmap <silent><Leader>b :Buffers<CR>
+nmap <silent><Leader>i :History<CR>
+nmap <silent><Leader>/ :History/<CR>
+nmap <silent><Leader>l :Lines<CR>
+nmap <silent><Leader>` :Marks<CR>
+nmap <silent><Leader>: :History:<CR>
+nmap <silent><leader>c :Commits<cr>
+nmap <silent><leader>F :Filetypes<cr>
+
+" Zoom
+nmap <Leader>z <Plug>(zoom-toggle)
+
+" Table mode
+nmap <Leader>te :TableModeToggle<cr>
+nmap <Leader>tr :TableModeRealign<cr>
+
+" vim-css-color, disabled by default
+" call css_color#disable()
+command! ColorToggle call css_color#toggle()
+nmap <Leader>\ :ColorToggle<cr>
+
+" <leader>+s is ysW
+nmap <leader>s ysW
+
+" GoJoinLines
+vnoremap gj :J <cr>
+
+" Skip empty lines with multiple cursors
+nmap <leader>se :call SkipEmptyLines()<cr>
+
+" GitGutter
+let g:gitgutter_map_keys = 0
+nmap ]g :GitGutterNextHunk<CR>
+nmap [g :GitGutterPrevHunk<CR>
+nmap <leader>f :GitGutterFold<CR>
+nmap <leader>p <Plug>(GitGutterPreviewHunk)
+nmap <leader>s <Plug>(GitGutterStageHunk)
+nmap <leader>u <Plug>(GitGutterUndoHunk)
+
+" Easymotion
+nmap s <Plug>(easymotion-s2)
+
+" Colorizer
+let g:colorizer_auto_map = 1
+
+" --- Function hotkeys --------------------------------------------------------
+
+" Show highlight groups
+nmap <leader>sp :call <SID>SynStack()<CR>
+
+" Clear things
+nmap <silent><esc><esc> :call <SID>ClearThings() <bar> noh<CR>
+
+" Strip whitespace and retab
+nmap gcl :call <SID>CleanUp()<CR>
+vmap gcl :call <SID>CleanUp()<CR>gv
+
+" Load session
+nmap <leader>r :call LoadSession()<CR>
+
+" ----------------------------------------------------------------------------
+" Plugins
+" ----------------------------------------------------------------------------
+
+" vimwintab
+let g:wintab_mode = 'fullauto'
+
+" csv syntax
+let g:csv_no_conceal = 1
+
+" vim-pandoc
+let g:pandoc#syntax#conceal#use = 0
+let g:pandoc#syntax#conceal#urls = 0
+let g:pandoc#syntax#codeblocks#embeds#use = 1
+
+" ansible-vim
+" let g:ansible_unindent_after_newline = 0
+let g:ansible_attribute_highlight = 'ob'
+let g:ansible_name_highlight = 'b'
+let g:ansible_extra_keywords_highlight = 1
+" Colours are in the :help E669
+let g:ansible_normal_keywords_highlight = 'Statement'
+let g:ansible_extra_keywords_highlight_group = 'Constant'
+let g:ansible_loop_keywords_highlight = 'Operator'
+
+" vim-startify
+let g:startify_custom_header = []
+
+let g:startify_lists = [
+      \ { 'type': 'files', 'header': ['History'] },
+      \ ]
+
+" vim-airline
+let g:airline_minimalist_showmod = 0
+let g:airline_theme='minimalist'
+let g:airline_powerline_fonts=1
+let g:airline_skip_empty_sections = 1
+let g:airline#parts#ffenc#skip_expected_string='utf-8[unix]'
+let g:airline#extensions#tabline#enabled=1
+let g:airline#extensions#whitespace#enabled = 1
+
+function! AirlineInit()
+  let g:airline_section_z = airline#section#create('%#__accent_bold#%{zoom#statusline()} %3l%#__restore__#/%L :%3v')
+endfunction
+autocmd User AirlineAfterInit call AirlineInit()
+
+let g:airline_mode_map = {
+      \ '__' : '-',
+      \ 'n'  : 'N',
+      \ 'i'  : 'I',
+      \ 'R'  : 'R',
+      \ 'c'  : 'C',
+      \ 'v'  : 'V',
+      \ 'V'  : 'V',
+      \ '' : 'V',
+      \ 's'  : 'S',
+      \ 'S'  : 'S',
+      \ '' : 'S',
+      \ }
+
+" Show tabline only if >1 file is open
+let g:airline#extensions#tabline#show_buffers=1
+let g:airline#extensions#tabline#buffer_min_count=2
+let g:airline#extensions#tabline#tab_min_count=2
+
+" Disable buffer type SR
+let g:airline#extensions#tabline#show_tab_type=0
+let g:airline#extensions#tabline#fnamemod=':.p'
+
+" Prettier GiGutter glyphs
+let g:gitgutter_sign_added = '+'
+let g:gitgutter_sign_modified = '•'
+let g:gitgutter_sign_removed = '-'
+let g:gitgutter_sign_removed_first_line = '-'
+let g:gitgutter_sign_modified_removed = '~'
+
+" Disable indent line by default
+let g:indentLine_enabled = 0
+let g:indentLine_setColors = 1
+" | ¦ ┆ │ |
+let g:indentLine_char = '│'
+let g:indentLine_leadingSpaceEnabled = 0
+let g:indentLine_leadingSpaceChar = '·'
+let g:indentLine_color_gui = '#1F1F1F'
+
+" clever-f
+let g:clever_f_smart_case = 1
+let g:clever_f_fix_key_direction = 1
+let g:clever_f_mark_char_color = 'DiffAdd'
+
+" Smart pairs are enabled by default:
+let g:pear_tree_smart_openers = 1
+let g:pear_tree_smart_closers = 1
+let g:pear_tree_smart_backspace = 1
+
+" multi-cursors
+let g:VM_silent_exit = 1
+
+" SuperTAB
+let g:SuperTabDefaultCompletionType = "<c-n>"
+let g:SuperTabContextDefaultCompletionType = "<c-n>"
+
+" vim-lion (gl/gL alignment)
+let g:lion_squeeze_spaces = 0
+
+" https://github.com/plasticboy/vim-markdown#basic-usage
+let g:vim_markdown_folding_style_pythonic = 1
+let g:vim_markdown_no_default_key_mappings = 1
+let g:vim_markdown_fenced_languages = ['viml=vim', 'bash=sh', 'ini=dosini']
+let g:vim_markdown_frontmatter = 1
+let g:vim_markdown_toml_frontmatter = 1
+let g:vim_markdown_json_frontmatter = 1
+let g:vim_markdown_strikethrough = 1
+
+" FZF
+let g:fzf_buffers_jump = 1
+let g:fzf_layout = {'down': '50%'}
+let g:fzf_preview_window = 'right:50%'
+" let g:fzf_commits_log_options = '--graph --color=auto --format="%C(auto)%h%d %s %C(black)%C(bold)%cr"'
+let $FZF_DEFAULT_OPTS="--layout=reverse"
+
+" :Files :F
+let fzf_opt_files = ['--color=dark,fg:#707880,bg:#000000,hl:#b5bd68,fg+:#c5c8c6,bg+:#000000,hl+:#d7ffaf,info:#707880,gutter:#000000,border:#373b41,prompt:#707880,pointer:#de935f,marker:#de935f,spinner:#8abeb7,header:#707880', '--margin=1,2', '--preview', 'bat --color=always --style=plain,changes {}']
+command! -bang -nargs=? -complete=dir Files call fzf#vim#files(<q-args>, {'options': fzf_opt_files}, <bang>0)
+command! -bang -nargs=? -complete=dir F call fzf#vim#files(<q-args>, {'options': fzf_opt_files}, <bang>0)
+
+" :Rg :R
+let fzf_cmd_rg = 'rg -L --colors "path:none" --colors "line:fg:55,59,65" --colors "column:fg:55,59,65"'
+let fzf_cmd_rg = fzf_cmd_rg.' --line-number --no-heading --color=always --smart-case --no-ignore --hidden --follow --glob "!.git/*" -- '
+let fzf_opt_rg = '--color=dark,fg:#707880,bg:#000000,hl:#b5bd68,fg+:#c5c8c6,bg+:#000000,hl+:#d7ffaf,info:#707880,'
+let fzf_opt_rg = fzf_opt_rg.'gutter:#000000,border:#373b41,prompt:#707880,pointer:#de935f,marker:#de935f,spinner:#8abeb7,'
+let fzf_opt_rg = fzf_opt_rg.'header:#707880 --exact --margin=1,2 --delimiter : --nth 2..'
+command! -bang -nargs=* Rg call fzf#vim#grep(fzf_cmd_rg .shellescape(<q-args>), 1, fzf#vim#with_preview({'options': fzf_opt_rg}), <bang>0)
+
+" :Ag
+command! -bang -nargs=* Ag call fzf#vim#ag(<q-args>, fzf#vim#with_preview({'options': '--delimiter : --nth 4..'}), <bang>0)
+
+" Temp reload
+" nmap <leader>b :w <bar> :so % <bar> :noh<cr>
+
+let g:fzf_colors =
+  \ { 'fg':      ['fg', 'Comment'],
+  \ 'bg':        ['bg', 'Normal'],
+  \ 'hl':        ['fg', 'String'],
+  \ 'fg+':       ['fg', 'CursorLine', 'CursorColumn', 'Normal'],
+  \ 'bg+':       ['bg', 'StatusLine', 'CursorColumn'],
+  \ 'hl+':       ['fg', 'DiffAdd'],
+  \ 'info':      ['fg', 'StatusLine'],
+  \ 'gutter':    ['bg', 'StatusLine'],
+  \ 'border':    ['fg', 'Ignore'],
+  \ 'prompt':    ['fg', 'Comment'],
+  \ 'pointer':   ['fg', 'Type'],
+  \ 'marker':    ['fg', 'Type'],
+  \ 'spinner':   ['fg', 'Operator'],
+  \ 'header':    ['fg', 'Comment'] }
+
+" ----------------------------------------------------------------------------
+" Macros
+" ----------------------------------------------------------------------------
+
+" Mostly use 2 spaces as <Tab>
+autocmd FileType text,markdown,vim,ini,gitconfig,*.yml,shell,bash,sh setlocal tabstop=2 shiftwidth=2 softtabstop=2
+
+" Markdown
+autocmd FileType markdown setlocal ft=pandoc
+
+" csv highlighting by maestro himself
+autocmd BufRead,BufNewFile *.csv setlocal ft=csv
+
+" Keep Web documents to 2 spaces as <Tab>
+" autocmd BufRead,BufNewFile *.htm,*.html,*.css,*.js setlocal tabstop=2 shiftwidth=2 softtabstop=2 expandtab
+
+" Pythonic tabs are limited to *.py
+" autocmd Filetype python setlocal expandtab tabstop=4 shiftwidth=4 softtabstop=4
+
+" YAML
+autocmd FileType yaml,ansible setlocal ts=2 sts=2 sw=2 expandtab indentkeys-=0# indentkeys-=<:> syntax=yaml.ansible
+
+" Resize splits when VIM is resized
+autocmd VimResized * wincmd =
+
+" Return to last edit position when opening files
+autocmd BufReadPost *
+  \ if line("'\"") > 1 && line("'\"") <= line("$") && &ft !~# 'commit'
+  \ | exe "normal! g`\""
+  \ | endif
+
+" Temporarily hide ruler when in FZF mode
+autocmd! FileType fzf set laststatus=0 noshowmode noruler | autocmd BufLeave <buffer> set laststatus=2 showmode ruler
+
+" Hide line numbers and enter insert mode when in terminal-mode
+function! TerminalOptions()
+  set nonumber
+  startinsert
+endfunction
+au TermOpen * call TerminalOptions()
+
+" Scroll mode, keeps cursor centered and horizontally unchanged
+function! ToggleScrollMode()
+  if exists("s:scroll_mode")
+    unmap k
+    unmap j
+    set startofline
+    set virtualedit=""
+    unlet s:scroll_mode
+    echom "scroll mode OFF"
+  else
+    nnoremap j <C-e>j
+    nnoremap k <C-y>k
+    set virtualedit=all
+    set nostartofline
+    let s:scroll_mode = 1
+    echom "scroll mode ON"
+  endif
+endfunction
+
+" Toggle between number and relativenumber
+function! ToggleNumber()
+  if(&relativenumber == 1)
+    set norelativenumber
+    set number
+  else
+    set relativenumber
+    set nocul
+  endif
+endfunc
+
+" dos2unix
+function! Dos2Unix()
+  %e ++ff=dos
+  %set ff=unix
+endfunc
+
+" Skip empty lines with multiple cursors
+function! SkipEmptyLines()
+  if exists("g:VM_skip_empty_lines")
+    if(g:VM_skip_empty_lines == 1)
+      let g:VM_skip_empty_lines = 0
+      echo "VM: Not skipping empty lines"
+    else
+      let g:VM_skip_empty_lines = 1
+      echo "VM: Skipping empty lines"
+    endif
+  else
+    let g:VM_skip_empty_lines = 1
+    echo "VM: Skipping empty lines"
+  endif
+endfunc
+
+" Strips trailing whitespace and retab
+function! <SID>CleanUp() range
+  let _s=@/
+  let l = line(".")
+  let c = col(".")
+  let l:win_view = winsaveview()
+  if a:firstline == a:lastline
+    keeppatterns %s/\s\+$//e
+    %retab!
+  else
+    keeppatterns '<,'>s/\s\+$//e
+    '<,'>retab!
+  endif
+  call winrestview(l:win_view)
+  call cursor(l, c)
+  let @/=_s
+endfunc
+
+" Insert date header
+function! DD()
+  let date = strftime('%a %d %b %Y %H:%M')
+  let line = "\n====================="
+  let out = date . line
+  put =out
+endfunc
+
+" Show highlight groups
+function! <SID>SynStack()
+  if !exists("*synstack")
+    return
+  endif
+  echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+endfunc
+
+" :ChangeTabStops 4 2
+" Use with care! Can break things.
+command! -nargs=* ChangeTabStops call s:ChangeTabStops(<f-args>)
+function! s:ChangeTabStops(current, new)
+        let &l:tabstop = a:current
+        let &l:softtabstop = a:current
+        set noexpandtab
+        retab!
+        let &l:tabstop = a:new
+        let &l:softtabstop = a:new
+        set expandtab
+        retab
+endfunction
+
+" Quickly flip between 2/4 spaces Tab
+function! <SID>ToggleTabs()
+  if(&shiftwidth == 2)
+    :set tabstop=4
+    :set shiftwidth=4
+    :set softtabstop=4
+    echom "4 spaces per tab"
+  else
+    :set tabstop=2
+    :set shiftwidth=2
+    :set softtabstop=2
+    echom "2 spaces per tab"
+  endif
+  set expandtab
+endfunction
+
+" Clear GUI/TUI indicators
+function! <SID>ClearThings()
+  call clever_f#reset()
+  call vm#hard_reset()
+endfunc
+
+" Minimalistic auto-session
+function! MakeSession()
+  let b:sessiondir = $HOME . "/.vim"
+  let b:filename = b:sessiondir . '/session.vim'
+  exe "mksession! " . b:filename
+endfunction
+
+function! LoadSession()
+  let b:sessiondir = $HOME . "/.vim"
+  let b:sessionfile = b:sessiondir . "/session.vim"
+  if (filereadable(b:sessionfile))
+    exe 'source ' b:sessionfile
+  else
+    echo "No session loaded."
+  endif
+endfunction
+
+" au VimEnter * nested :call LoadSession()
+au VimLeave * :call MakeSession()
+
+" Delete file(s)
+command! -complete=file -nargs=1 Rm :echo 'Remove: '.'<f-args>'.' '.(delete(<f-args>) == 0 ? 'SUCCEEDED' : 'FAILED')
+command! Rmf :call delete(expand('%')) | bdelete!
+
+
+" Lesspipe
+" if exists('g:did_load_filetypes')
+"   if executable('lesspipe.sh')
+"     let s:lesspipe_cmd = 'LESSQUIET=1 lesspipe.sh'
+"   elseif executable('lesspipe')
+"     let s:lesspipe_cmd = 'lesspipe'
+"   endif
+"   if exists('s:lesspipe_cmd') && executable('file')
+"     augroup lesspipe
+"       autocmd!
+"       autocmd BufReadPost *
+"             \ if  empty(&l:buftype) && !did_filetype() && !&l:binary && filereadable(bufname('%')) &&
+"             \     system('file --mime --brief ' . fnamemodify(resolve(expand('%')), ':p:S')) !~# '^text/' |
+"             \   silent exe '%!' . s:lesspipe_cmd . ' ' . expand('%:S') |
+"             \   setlocal filetype=text nomodifiable readonly |
+"             \ endif
+"           augroup END
+"   endif
+" endif
+
+" Wayland/Sway paste fix
+if exists('$WAYLAND_DISPLAY')
+    " clipboard on wayland with newline fix
+    let g:clipboard = {
+        \   'name': 'WL-Clipboard with ^M Trim',
+        \   'copy': {
+        \      '+': 'wl-copy --foreground --type text/plain',
+        \      '*': 'wl-copy --foreground --type text/plain --primary',
+        \    },
+        \   'paste': {
+        \      '+': {-> systemlist('wl-paste --no-newline --type "text/plain;charset=utf-8" 2>/dev/null | sed -e "s/\r$//"', '', 1)},
+        \      '*': {-> systemlist('wl-paste --no-newline --type "text/plain;charset=utf-8" --primary 2>/dev/null | sed -e "s/\r$//"', '', 1)},
+        \   },
+        \   'cache_enabled': 1,
+        \ }
+endif
+
+" nvim-qt
+function! NeovimQtLoader()
+  if exists('g:GuiLoaded')
+    GuiTabline 0
+    Guifont JetBrains Mono:h14
+    let g:GuiMousehide=1
+    map <A-c> y
+    map <A-v> p
+  endif
+endfunction
+
+" Yes, this 1ms delay is necessary.
+" autocmd VimEnter * call timer_start(1, { tid -> execute(NeovimQtLoader())})
+
+" Living in the fast lane (but leave this at the end)
+nnoremap ; :
+vnoremap ; :

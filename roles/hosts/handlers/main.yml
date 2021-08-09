@@ -1,0 +1,4 @@
+---
+- name: restart {{ resolver }}
+  service: name={{ resolver }} state=restarted
+  become: True

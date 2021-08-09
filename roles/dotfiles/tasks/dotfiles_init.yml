@@ -1,0 +1,21 @@
+---
+- name: Hush login message
+  file:
+    path: '{{ ansible_env.HOME }}/.hushlogin'
+    state: touch
+    modification_time: preserve
+    access_time: preserve
+
+- name: Create $XDG and ~/.ssh with proper permissions
+  file:
+    path: '{{ item }}'
+    state: directory
+    mode: 0700
+  with_items:
+    - "{{ ansible_env.HOME }}/.cache"
+    - "{{ ansible_env.HOME }}/.cache/TMPDIR"
+    - "{{ ansible_env.HOME }}/.config"
+    - "{{ ansible_env.HOME }}/.local/runtime"
+    - "{{ ansible_env.HOME }}/.local/share"
+    - "{{ ansible_env.HOME }}/.ssh"
+    - "{{ ansible_env.HOME }}/.ssh/controls"

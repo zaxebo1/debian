@@ -1,0 +1,62 @@
+---
+- name: Disable ipv6
+  lineinfile:
+    path: /etc/ufw/ufw.conf
+    line: 'IPV6=no'
+    insertafter: EOF
+
+  # Note: single-quoted for a reason
+- name: Don't autoconfigure ipv6
+  replace:
+    path: /etc/ufw/sysctl.conf
+    regexp: '^#(net\/ipv6\/conf\/\w*\/autoconf\=0)'
+    replace: '\1'
+
+- name: Limit SSH connections
+  ufw:
+    rule: limit
+    port: ssh
+    proto: tcp
+    comment: Limit SSH via Ansible
+  when: base_limit_ssh
+
+- name: Disable logging in config
+  lineinfile:
+    path: /etc/ufw/ufw.conf
+    regexp: '^LOGLEVEL'
+    line: 'LOGLEVEL=off'
+
+- name: Add UFW rules
+  ufw:
+    comment: '{{ item.comment | default(omit) }}'
+    direction: '{{ item.direction | default("in") }}'  # in/out/router
+    from_ip: '{{ item.from | default("any") }}'        # defaults to "any"
+    port: '{{ item.port | default("any") }}'           # destination port
+    proto: '{{ item.proto | default("any") }}'
+    rule: '{{ item.rule }}'                            # allow/deny/limit/reject
+    to_ip: '{{ item.to | default("any") }}'            # defaults to "any"
+  with_items: '{{ base_ufw_rule }}'
+  when: base_ufw_rule | length > 0
+
+- name: Add UFW service
+  ufw:
+    comment: '{{ item.comment | default(omit) }}'
+    from_ip: '{{ item.from | default("any") }}'        # defaults to "any"
+    rule: '{{ item.rule }}'                            # allow/deny/limit/reject
+    to_ip: '{{ item.to | default("any") }}'            # defaults to "any"
+    name: '{{ item.service }}'                         # /etc/ufw/applications.d
+  with_items: '{{ base_ufw_service }}'
+  when: base_ufw_service | length > 0
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+    logging: 'off'
+
+- name: Ensure UFW is up and running
+  service:
+    name: ufw
+    state: restarted
+  changed_when: False

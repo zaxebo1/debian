@@ -1,0 +1,34 @@
+---
+- name: Install requested software packages
+  import_tasks: software_install.yml
+  become: True
+  tags:
+    - software_install
+
+- name: Configure audio
+  import_tasks: software_audio.yml
+  become: False
+  when: sw_setup_audio
+  tags:
+    - software_audio
+
+- name: Configure libvirt / KVM
+  import_tasks: libvirt.yml
+  become: True
+  when: sw_virtio_install
+  tags:
+    - software_libvirt
+
+- name: Configure services
+  import_tasks: services.yml
+  become: True
+  tags:
+    - software_services
+
+- name: Run all relevant handlers
+  meta: flush_handlers
+
+- name: Finale
+  debug:
+    msg: |
+      * SOFTWARE ROLE IS COMPLETED *

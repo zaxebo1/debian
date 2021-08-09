@@ -1,0 +1,126 @@
+---
+- name: Remove tmux.conf from the list of dotfiles, pending prefix change...
+  set_fact:
+    dots_dotfiles_list: '{{ dots_dotfiles_list | rejectattr("src", "equalto", "tmux.conf") }}'
+  when: dots_change_tmux_prefix
+
+- name: Remove mako from the list of dotfiles, running against root
+  set_fact:
+    dots_dotfiles_list: '{{ dots_dotfiles_list | rejectattr("src", "equalto", "config/mako/config") }}'
+    when: ansible_env.USER == 'root'
+
+- name: Remove local gitconfig from the list of dotfiles
+  set_fact:
+    dots_dotfiles_list: '{{ dots_dotfiles_list | rejectattr("src", "equalto", "gitconfig") }}'
+  when: dots_remote_gitconfig
+
+- name: Remove remote gitconfig from the list of dotfiles
+  set_fact:
+    dots_dotfiles_list: '{{ dots_dotfiles_list | rejectattr("src", "equalto", "gitconfig-remote") }}'
+  when: not dots_remote_gitconfig
+
+- name: Check pubring and trust-db in ~/.gnupg/
+  stat:
+    path: '{{ ansible_env.HOME }}/.gnupg/{{ item }}'
+  with_items:
+    - "pubring.kbx"
+    - "trustdb.gpg"
+  register: gpg_stat
+
+- name: Set intermediate fact about our findings...
+  no_log: true
+  set_fact:
+    gpg_files_found: '{{ gpg_files_found + [item.stat.exists] }}'
+  with_items:
+    - '{{ gpg_stat.results }}'
+
+- name: Create single 'GPG-result' variable...
+  set_fact:
+    gpg_db_initialised: '{{ gpg_files_found | unique | join() | bool }}'
+    dots_dotfiles_list_stat_src_dirs: []
+
+- name: Initialise ~/.gnupg
+  shell: gpg -k
+  when: not gpg_db_initialised
+
+  # When `dots_extract_dotfiles`...
+- block:
+
+  - name: Create ~/.local/etc/dotfiles on the remote
+    file:
+      path: '{{ ansible_env.HOME }}/.local/etc/dotfiles'
+      state: directory
+
+  - name: Copy primary dotfiles to the remote machine
+    synchronize:
+      src: './{{ item.src }}'
+      dest: '{{ ansible_env.HOME }}/.local/etc/dotfiles/'
+      archive: False
+      recursive: True
+      checksum: True
+      rsync_opts: ['--relative']
+      mode: 'push'
+    with_items: '{{ dots_dotfiles_list }}'
+    register: dotfiles_copied
+
+  # Link from ../dotfiles/
+  - block:
+
+    - name: Attempt to link files, rescue errored paths by creating missing intermediary folders
+      block:
+
+      - name: Link dotfiles from ~/.local/etc/dotfiles to $HOME
+        file:
+          src: '{{ ansible_env.HOME }}/.local/etc/dotfiles/{{ item.src }}'
+          dest: '{{ ansible_env.HOME }}/{{ item.dest }}'
+          state: '{{ item.state }}'
+          force: True
+        become: True
+        become_user: '{{ ansible_env.USER }}'
+        with_items: '{{ dots_dotfiles_list }}'
+        notify: rebuild bat cache
+        register: dotfiles_linked
+
+      rescue:
+
+        - name: Rescue failed symlinks
+          block:
+
+          - name: Create missing directories...
+            file:
+              path: '{{ item.invocation.module_args.dest | dirname }}'
+              state: directory
+              recurse: True
+            loop: '{{ dotfiles_linked.results }}'
+            when: item.failed
+
+          - name: Try to link again
+            file:
+              src: '{{ ansible_env.HOME }}/.local/etc/dotfiles/{{ item.src }}'
+              dest: '{{ ansible_env.HOME }}/{{ item.dest }}'
+              state: '{{ item.state }}'
+              force: True
+            become: True
+            become_user: '{{ ansible_env.USER }}'
+            with_items: '{{ dots_dotfiles_list }}'
+            register: dotfiles_linked_2nd
+
+          - name: Ensure that dotfiles are linked in full
+            assert:
+              that: dotfiles_linked_2nd.msg == 'All items completed'
+      # Block end (link dotfiles)
+
+  when: dots_extract_dotfiles
+  # Block end (extract dotfiles)
+
+  # Link from this role
+- name: Link dotfiles from this role to $HOME
+  file:
+    src: '{{ role_path }}/files/{{ item.src }}'
+    dest: '{{ ansible_env.HOME }}/{{ item.dest }}'
+    state: '{{ item.state }}'
+    force: True
+  with_items: '{{ dots_dotfiles_list }}'
+  when: not dots_extract_dotfiles
+  notify: rebuild bat cache
+  register: dotfiles_linked
